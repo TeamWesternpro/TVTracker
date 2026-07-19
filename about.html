@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - About Us</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="about.html" class="active">About Us</a>
+      <a href="auth.html" id="navAuth">Log In</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="about-page">
+
+      <!-- Hero -->
+      <section class="about-hero">
+        <div class="hero-badge">&#127775; About TV Tracker</div>
+        <h2>Your Ultimate <span>TV Companion</span></h2>
+        <p class="about-subtitle">
+          TV Tracker is a modern platform built for TV series enthusiasts who want to organize and personalize their watching experience. Track every show, discover new releases, and never lose track of what to watch next.
+        </p>
+      </section>
+
+      <!-- What We Do -->
+      <section class="about-section">
+        <div class="about-section-header">
+          <span class="about-section-icon">&#127916;</span>
+          <h3>What We Do</h3>
+        </div>
+        <div class="about-content-card">
+          <p>
+            TV Tracker was created with one goal in mind: give TV lovers a clean, powerful tool to manage their watching life. We believe that tracking your shows should be effortless — no spreadsheets, no sticky notes, just a beautiful app that does the work for you.
+          </p>
+          <p>
+            From binge-watching the latest Netflix original to rewatching a beloved classic, TV Tracker helps you organize everything in one place. Add shows with detailed information including cast, creators, genre, platform, and release dates. Our calendar view gives you a clear picture of what's coming up, so you never miss a premiere.
+          </p>
+          <p>
+            Your data is stored securely in the cloud with Supabase, and the entire experience is designed to be fast, intuitive, and visually stunning. Whether you're a casual viewer or a hardcore binge-watcher, TV Tracker is built for you.
+          </p>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section class="about-section">
+        <div class="about-section-header">
+          <span class="about-section-icon">&#10024;</span>
+          <h3>Features</h3>
+        </div>
+        <div class="about-features">
+          <div class="about-feature">
+            <div class="about-feature-icon">&#128202;</div>
+            <h4>Track Your Shows</h4>
+            <p>Keep a comprehensive list of every show you're watching, have watched, or plan to watch. Organize by status with color-coded categories.</p>
+          </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">&#128197;</div>
+            <h4>Release Calendar</h4>
+            <p>View upcoming release dates on an interactive calendar. Know exactly when new episodes and series are dropping.</p>
+          </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">&#128269;</div>
+            <h4>Smart Search</h4>
+            <p>Instantly find any show in your collection with real-time search. Filter by status and search by title simultaneously.</p>
+          </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">&#128100;</div>
+            <h4>Cast & Creators</h4>
+            <p>Add detailed creator and cast information with profile photos. Track roles, character names, and creator status.</p>
+          </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">&#127760;</div>
+            <h4>Multi-Platform</h4>
+            <p>Track shows across Netflix, HBO Max, Apple TV+, Crunchyroll, and more. Upload platform logos for quick identification.</p>
+          </div>
+          <div class="about-feature">
+            <div class="about-feature-icon">&#128274;</div>
+            <h4>Secure & Private</h4>
+            <p>Your data is encrypted and stored securely in the cloud. Only you can see your shows and personal information.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="about-section">
+        <div class="about-section-header">
+          <span class="about-section-icon">&#10068;</span>
+          <h3>Frequently Asked Questions</h3>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>Is TV Tracker free to use?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>Yes, TV Tracker is completely free to use. Create an account and start tracking your shows immediately with no hidden fees or premium tiers.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>Do I need an account to use TV Tracker?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>Yes, you need a free account to access the Tracker, Calendar, and Home pages. This allows us to securely store your data in the cloud and sync it across devices.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>Can I upload images for my shows?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>Absolutely. You can upload poster images for each show, platform logos, and profile photos for creators and cast members. All images are stored securely in the cloud.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>What platforms can I track?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>You can track shows from any platform — Netflix, HBO Max, Apple TV+, Disney+, Crunchyroll, Hulu, Amazon Prime Video, BBC, and more. If it exists, you can track it.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>How does the calendar work?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>The calendar displays release dates for all your tracked shows. Shows with a release date are automatically plotted on the calendar. You can also manually add upcoming shows directly from the calendar view.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>Is my data private and secure?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>Yes. Your data is stored using Supabase with industry-standard encryption. We never sell or share your personal information. Only you can access your tracked shows and account details.</p>
+            </div>
+          </div>
+          <div class="faq-item" onclick="this.classList.toggle('open')">
+            <div class="faq-question">
+              <span>Can I delete my account?</span>
+              <span class="faq-arrow">&#9662;</span>
+            </div>
+            <div class="faq-answer">
+              <p>Yes, you can request account deletion at any time by reaching out through our Feedback form. Your data will be permanently removed from our servers.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Meet The Team -->
+      <section class="about-section">
+        <div class="about-section-header" style="justify-content:center; text-align:center;">
+          <span class="about-section-icon">&#128101;</span>
+          <h3>Meet Our Team</h3>
+        </div>
+        <p class="about-section-subtitle">The people behind TV Tracker</p>
+        <div class="team-grid">
+          <div class="team-card">
+            <div class="team-avatar">TW</div>
+            <h4>TeamWestern</h4>
+            <div class="team-role">Co-Founder / Lead Developer</div>
+            <p class="team-bio">Visionary behind TV Tracker. TeamWestern co-founded the project and leads all development efforts, building the platform from the ground up with a focus on performance, design, and user experience.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="about-cta">
+        <h3>Ready to start tracking?</h3>
+        <p>Join TV Tracker today and take control of your watching experience.</p>
+        <a href="auth.html" class="btn-primary">Get Started Free &rarr;</a>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="tracker.html">Tracker</a>
+            <a href="calendar.html">Calendar</a>
+            <a href="about.html">About Us</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('help')">Help Center</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('feedback')">Feedback</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/legal.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      if (!(await requireAuth())) return;
+      await updateNavbarAuth();
+    });
+  </script>
+</body>
+</html>

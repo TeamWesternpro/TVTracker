@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - Home</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="about.html">About Us</a>
+      <a href="auth.html" id="navAuth">Log In</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <!-- Hero -->
+    <section class="home-hero">
+      <div class="home-hero-content">
+        <div class="hero-badge">&#127775; Your Personal TV Companion</div>
+        <h2>Track Every Show You <span>Watch</span></h2>
+        <p>Organize your watchlist, track episodes, and never lose track of what to watch next. Your ultimate TV series companion.</p>
+        <div class="hero-actions">
+          <a href="auth.html" class="btn-primary">&#128202; Get Started Free</a>
+          <a href="about.html" class="btn-secondary">&#128712; Learn More</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="statTotal">0</div>
+          <div class="stat-label">Total Shows</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statWatched">0</div>
+          <div class="stat-label">Watched</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statWatching">0</div>
+          <div class="stat-label">Currently Watching</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statUpcoming">0</div>
+          <div class="stat-label">Upcoming</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="home-features">
+      <div class="home-section-header">
+        <h3>Why TV Tracker?</h3>
+        <p>Everything you need to manage your TV watching experience</p>
+      </div>
+      <div class="home-features-grid">
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#128202;</div>
+          <h4>Smart Tracking</h4>
+          <p>Categorize shows by status — Currently Watching, Watched, Plan to Watch, or Upcoming. Filter and search instantly.</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#128197;</div>
+          <h4>Release Calendar</h4>
+          <p>Interactive calendar showing release dates for all your tracked shows. Never miss a premiere again.</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#128100;</div>
+          <h4>Cast & Creators</h4>
+          <p>Add detailed cast and creator info with profile photos, roles, and character names.</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#128269;</div>
+          <h4>Instant Search</h4>
+          <p>Find any show in your collection in milliseconds with real-time search across your entire library.</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#127760;</div>
+          <h4>Multi-Platform</h4>
+          <p>Track shows from Netflix, HBO Max, Apple TV+, Crunchyroll, and more — all in one place.</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">&#128274;</div>
+          <h4>Secure & Synced</h4>
+          <p>Your data is encrypted and stored in the cloud. Access your watchlist from any device, anytime.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="home-cta">
+      <div class="home-cta-content">
+        <h3>Ready to take control of your watchlist?</h3>
+        <p>Join TV Tracker today and never lose track of what to watch next.</p>
+        <a href="auth.html" class="btn-primary">Create Free Account &rarr;</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="tracker.html">Tracker</a>
+            <a href="calendar.html">Calendar</a>
+            <a href="about.html">About Us</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('help')">Help Center</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('feedback')">Feedback</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/legal.js"></script>
+  <script>
+    async function initHome() {
+      if (!(await requireAuth())) return;
+      await updateNavbarAuth();
+      const counts = await getStatusCounts();
+      document.getElementById('statTotal').textContent = counts.All;
+      document.getElementById('statWatched').textContent = counts.Watched;
+      document.getElementById('statWatching').textContent = counts['Currently Watching'];
+      document.getElementById('statUpcoming').textContent = counts.Upcoming;
+    }
+
+    document.addEventListener('DOMContentLoaded', initHome);
+  </script>
+</body>
+</html>

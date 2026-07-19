@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - Calendar</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="calendar.html" class="active">Calendar</a>
+      <a href="about.html">About Us</a>
+      <a href="auth.html" id="navAuth">Log In</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="calendar-page">
+      <div class="calendar-header">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <h2>&#128197; Release Calendar</h2>
+          <button class="add-btn" onclick="openUpcomingModal()">&#43; Add Upcoming Show</button>
+        </div>
+        <div class="calendar-nav">
+          <button onclick="changeMonth(-1)">&laquo;</button>
+          <span class="calendar-month-label" id="monthLabel"></span>
+          <button onclick="changeMonth(1)">&raquo;</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="tracker.html">Tracker</a>
+            <a href="calendar.html">Calendar</a>
+            <a href="about.html">About Us</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('help')">Help Center</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('feedback')">Feedback</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/legal.js"></script>
+  <script>
+    let calYear, calMonth;
+
+    async function initCalendar() {
+      if (!(await requireAuth())) return;
+      await updateNavbarAuth();
+      const user = await getCurrentUser();
+      const addBtn = document.querySelector('.add-btn');
+      if (addBtn) addBtn.style.display = user ? '' : 'none';
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+      await renderCalendar();
+    }
+
+    async function changeMonth(dir) {
+      calMonth += dir;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      await renderCalendar();
+    }
+
+    async function renderCalendar() {
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('monthLabel').textContent = `${months[calMonth]} ${calYear}`;
+      const grid = document.getElementById('calendarGrid');
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+      const today = new Date();
+      const shows = await getShows();
+      const calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
+      let html = dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="calendar-day other-month"><div class="calendar-day-number">${daysInPrevMonth - i}</div></div>`;
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day;
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayShows = shows.filter(s => s.releaseDate === dateStr);
+        const dayCalEvents = calEvents.filter(e => e.releaseDate === dateStr);
+        let eventsHTML = dayShows.map(s => {
+          let cls = 'upcoming';
+          if (s.status === 'Watched') cls = 'watched';
+          else if (s.status === 'Currently Watching') cls = 'watching';
+          else if (s.status === 'Plan to Watch') cls = 'plan';
+          return `<div class="calendar-event ${cls}" onclick="openDetailModal(${s.id})" title="${s.title}">${s.title}</div>`;
+        }).join('');
+        eventsHTML += dayCalEvents.map(e =>
+          `<div class="calendar-event upcoming" title="${e.title}"><span>${e.title}</span><button class="cal-event-delete" onclick="event.stopPropagation(); deleteCalEvent(${e.id})" title="Delete">&times;</button></div>`
+        ).join('');
+        html += `<div class="calendar-day ${isToday ? 'today' : ''}">
+          <div class="calendar-day-number">${day}</div>
+          ${eventsHTML}
+        </div>`;
+      }
+      const totalCells = firstDay + daysInMonth;
+      const remaining = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="calendar-day other-month"><div class="calendar-day-number">${i}</div></div>`;
+      }
+      grid.innerHTML = html;
+    }
+
+    function getStatusClass(status) {
+      switch (status) {
+        case 'Watched': return 'watched';
+        case 'Currently Watching': return 'watching';
+        case 'Plan to Watch': return 'plan';
+        case 'Upcoming': return 'upcoming';
+        default: return '';
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      const day = d.getDate();
+      const month = d.toLocaleDateString('en-US', { month: 'short' });
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    function renderPersonCard(p) {
+      const initials = p.name ? p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??';
+      const photoHTML = p.photo ? `<img src="${p.photo}">` : initials;
+      const statusBadge = p.status ? `<span class="person-status-badge ${p.status.toLowerCase()}">${p.status}</span>` : '';
+      return `
+        <div class="person-card">
+          <div class="person-avatar">${photoHTML}</div>
+          <div class="person-info">
+            <div class="person-name">${p.name}</div>
+            <div class="person-role">${p.role || ''}</div>
+          </div>
+          ${statusBadge}
+        </div>
+      `;
+    }
+
+    function renderCastCard(c) {
+      const initials = c.actor ? c.actor.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??';
+      const photoHTML = c.photo ? `<img src="${c.photo}">` : initials;
+      return `
+        <div class="person-card">
+          <div class="person-avatar">${photoHTML}</div>
+          <div class="person-info">
+            <div class="person-name">${c.actor}</div>
+            <div class="person-role">${c.character ? 'as ' + c.character : ''}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function openDetailModal(id) {
+      const show = await getShowById(id);
+      if (!show) return;
+      const statusClass = getStatusClass(show.status);
+      const posterHTML = show.poster
+        ? `<img src="${show.poster}" alt="${show.title}">`
+        : `<div class="card-poster-placeholder">&#128250;</div>`;
+      const genres = show.genre.split(',').map(g => `<span class="modal-genre-tag">${g.trim()}</span>`).join('');
+      const creatorsHTML = (show.creators || []).length > 0
+        ? show.creators.map(c => renderPersonCard(c)).join('')
+        : '<span style="color:var(--text-muted)">Not specified</span>';
+      const castHTML = (show.cast || []).length > 0
+        ? show.cast.map(c => renderCastCard(c)).join('')
+        : '<span style="color:var(--text-muted)">Not specified</span>';
+
+      const existing = document.getElementById('detailModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.id = 'detailModal';
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="modal-poster">
+            ${posterHTML}
+            <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+          </div>
+          <div class="modal-body">
+            <span class="modal-status-tag ${statusClass}">${show.status}</span>
+            <h2 class="modal-title">${show.title}</h2>
+            <p class="modal-desc">${show.description}</p>
+            <div class="modal-info-grid">
+              <div class="modal-info-item">
+                <div class="modal-info-label">Release Date</div>
+                <div class="modal-info-value">${formatDate(show.releaseDate)}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="modal-info-label">Language</div>
+                <div class="modal-info-value">${show.language}</div>
+              </div>
+              <div class="modal-info-item">
+                <div class="modal-info-label">Platform</div>
+                <div class="modal-info-value">${show.platform || 'Not specified'}</div>
+              </div>
+            </div>
+            ${show.platformLogo ? `
+            <div class="modal-platform">
+              <div class="modal-platform-logo"><img src="${show.platformLogo}" alt="${show.platform}"></div>
+              <div>
+                <div class="modal-info-label">Platform Logo</div>
+                <div class="modal-info-value">${show.platform}</div>
+              </div>
+            </div>` : ''}
+            <div class="modal-section-title">Genres</div>
+            <div class="modal-genres">${genres}</div>
+            <div class="modal-section-title">Creators</div>
+            <div class="person-list">${creatorsHTML}</div>
+            <div class="modal-section-title">Cast & Characters</div>
+            <div class="person-list">${castHTML}</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      requestAnimationFrame(() => modal.classList.add('active'));
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal('detailModal'); });
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
+
+    /* ===== Upcoming Show Form ===== */
+    function openUpcomingModal() {
+      const existing = document.getElementById('upcomingModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay form-modal';
+      modal.id = 'upcomingModal';
+      modal.innerHTML = `
+        <div class="modal">
+          <div class="modal-body">
+            <h2 class="form-title">Add Upcoming Show</h2>
+            <form onsubmit="handleUpcomingSubmit(event)">
+              <div class="form-group">
+                <label class="form-label">Series Title *</label>
+                <input type="text" class="form-input" id="upTitle" placeholder="e.g. The Last of Us Season 3" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Release Date *</label>
+                <input type="date" class="form-input" id="upDate" required>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="form-btn-cancel" onclick="closeModal('upcomingModal')">Cancel</button>
+                <button type="submit" class="form-btn-save">Add to Calendar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      requestAnimationFrame(() => modal.classList.add('active'));
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal('upcomingModal'); });
+    }
+
+    async function handleUpcomingSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('upTitle').value.trim();
+      const date = document.getElementById('upDate').value;
+      if (!title || !date) return;
+
+      const calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
+      calEvents.push({
+        id: Date.now(),
+        title,
+        releaseDate: date,
+        status: 'Upcoming'
+      });
+      localStorage.setItem('tvTracker_calEvents', JSON.stringify(calEvents));
+      closeModal('upcomingModal');
+      await renderCalendar();
+      showToast(`"${title}" added to calendar!`, 'success');
+    }
+
+    async function deleteCalEvent(id) {
+      let calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
+      calEvents = calEvents.filter(e => e.id !== id);
+      localStorage.setItem('tvTracker_calEvents', JSON.stringify(calEvents));
+      await renderCalendar();
+      showToast('Calendar event deleted', 'success');
+    }
+
+    function showToast(message, type) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type || 'info'}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', initCalendar);
+  </script>
+</body>
+</html>

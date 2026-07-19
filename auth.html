@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - Account</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="auth.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+  </nav>
+
+  <div class="main-content">
+    <div class="auth-page">
+      <!-- Login Form -->
+      <div class="auth-card" id="loginCard">
+        <div class="auth-icon">&#128100;</div>
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Log in to track your shows</p>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="loginEmail" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="loginPassword" placeholder="Your password" required>
+          </div>
+          <div class="auth-error" id="loginError"></div>
+          <button type="submit" class="form-btn-save auth-submit" id="loginBtn">Log In</button>
+        </form>
+
+        <p class="auth-switch">Don't have an account? <a href="#" onclick="showSignup(event)">Sign Up</a></p>
+      </div>
+
+      <!-- Signup Form -->
+      <div class="auth-card" id="signupCard" style="display:none;">
+        <div class="auth-icon">&#127381;</div>
+        <h2 class="auth-title">Create Account</h2>
+        <p class="auth-subtitle">Start tracking your favorite shows</p>
+
+        <form id="signupForm" onsubmit="handleSignup(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="signupEmail" placeholder="you@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="signupPassword" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" class="form-input" id="signupConfirm" placeholder="Repeat password" required minlength="6">
+          </div>
+          <div class="auth-error" id="signupError"></div>
+          <button type="submit" class="form-btn-save auth-submit" id="signupBtn">Create Account</button>
+        </form>
+
+        <p class="auth-switch">Already have an account? <a href="#" onclick="showLogin(event)">Log In</a></p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/legal.js"></script>
+  <script>
+    function showLogin(e) {
+      e.preventDefault();
+      document.getElementById('loginCard').style.display = '';
+      document.getElementById('signupCard').style.display = 'none';
+    }
+
+    function showSignup(e) {
+      e.preventDefault();
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('signupCard').style.display = '';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+      errorEl.textContent = '';
+      btn.textContent = 'Logging in...';
+      btn.disabled = true;
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      btn.textContent = 'Log In';
+      btn.disabled = false;
+
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+      window.location.href = 'tracker.html';
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const confirm = document.getElementById('signupConfirm').value;
+      const errorEl = document.getElementById('signupError');
+      const btn = document.getElementById('signupBtn');
+      errorEl.textContent = '';
+
+      if (password !== confirm) {
+        errorEl.textContent = 'Passwords do not match';
+        return;
+      }
+
+      btn.textContent = 'Creating account...';
+      btn.disabled = true;
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+
+      btn.textContent = 'Create Account';
+      btn.disabled = false;
+
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+
+      if (data.user && !data.session) {
+        errorEl.textContent = '';
+        document.getElementById('signupCard').innerHTML = `
+          <div class="auth-icon">&#9989;</div>
+          <h2 class="auth-title">Check Your Email</h2>
+          <p class="auth-subtitle">We sent a confirmation link to <strong>${email}</strong>. Click it to verify your account, then log in.</p>
+          <button class="form-btn-save auth-submit" onclick="showLogin(event)" style="margin-top:1.5rem;">Back to Log In</button>
+        `;
+        return;
+      }
+
+      window.location.href = 'tracker.html';
+    }
+
+    async function initAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session) {
+        window.location.href = 'tracker.html';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>
