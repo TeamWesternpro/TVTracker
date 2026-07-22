@@ -160,11 +160,14 @@ async function handleWebhookSubmit(e, type) {
   btn.disabled = true;
   btn.textContent = 'Sending...';
 
-  let userEmail = 'Anonymous';
+  let userName = 'Anonymous';
   try {
-    if (typeof supabaseClient !== 'undefined') {
+    const profile = JSON.parse(localStorage.getItem('tvTracker_profile') || 'null');
+    if (profile && profile.username) {
+      userName = profile.username;
+    } else if (typeof supabaseClient !== 'undefined') {
       const { data } = await supabaseClient.auth.getSession();
-      if (data.session?.user?.email) userEmail = data.session.user.email;
+      if (data.session?.user?.email) userName = data.session.user.email.split('@')[0];
     }
   } catch (err) {}
 
@@ -176,7 +179,7 @@ async function handleWebhookSubmit(e, type) {
     description: message,
     color: color,
     fields: [
-      { name: 'User', value: userEmail, inline: true },
+      { name: 'User', value: userName, inline: true },
       { name: 'Type', value: label, inline: true },
       { name: 'Page', value: window.location.pathname.split('/').pop() || 'index.html', inline: true }
     ],
