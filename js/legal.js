@@ -1,6 +1,11 @@
 // ============================================
-// TV Tracker - Legal Modals
+// TV Tracker - Legal Modals & Discord Webhooks
 // ============================================
+
+const DISCORD_WEBHOOKS = {
+  features: 'https://discord.com/api/webhooks/1529422917606051951/Bc6-rXl0HKDOrAgksXuJa5XZLAGq6_EL-Cs323daVqMOC3nyx4fAbDirs1LQ4fkGYhHp',
+  feedback: 'https://discord.com/api/webhooks/1529423048875184288/ggVvrDL4wmr0DFqXimvSXsUWE9fnzHwOMQa_a7aaLjXkloALRjA8Muy1M7XWGM3KhUT4'
+};
 
 const legalContent = {
   terms: {
@@ -76,48 +81,13 @@ const legalContent = {
   },
   help: {
     icon: '&#10067;',
-    title: 'Help Center',
-    body: `
-      <p>Find answers to common questions about using TV Tracker.</p>
-      <h4>How do I add a new show?</h4>
-      <p>Go to the <strong>Tracker</strong> page and click the <strong>"+ Add Show"</strong> button. Fill in the details like title, description, status, and optionally upload a poster image. You can also add creators and cast members.</p>
-      <h4>How do I edit or delete a show?</h4>
-      <p>Hover over any show card on the Tracker page. You'll see edit (pencil) and delete (trash) buttons appear in the top-right corner of the card.</p>
-      <h4>What do the status colors mean?</h4>
-      <ul>
-        <li><strong>Currently Watching</strong> (Yellow) — Shows you're actively watching</li>
-        <li><strong>Watched</strong> (Green) — Shows you've completed</li>
-        <li><strong>Plan to Watch</strong> (Purple) — Shows on your watchlist</li>
-        <li><strong>Upcoming</strong> (Red) — Shows that haven't aired yet</li>
-      </ul>
-      <h4>How does the Calendar work?</h4>
-      <p>The Calendar page displays release dates for all your tracked shows. You can also add upcoming shows directly from the calendar using the "+ Add Upcoming Show" button.</p>
-      <h4>Can I search for shows?</h4>
-      <p>Yes! Use the search bar at the top of the Tracker page to filter shows by title in real time.</p>
-      <h4>Is my data private?</h4>
-      <p>Yes. Your shows and account information are stored securely and are only visible to you. See our <strong>Privacy Policy</strong> for more details.</p>
-    `
+    title: 'Feature Request',
+    isForm: true
   },
   feedback: {
     icon: '&#128172;',
     title: 'Send Feedback',
-    body: `
-      <p>We'd love to hear from you! Your feedback helps us improve TV Tracker.</p>
-      <h4>What kind of feedback?</h4>
-      <p>All types are welcome — bug reports, feature requests, design suggestions, or general thoughts about the app.</p>
-      <h4>How to send feedback</h4>
-      <p>Reach out to us through any of these channels:</p>
-      <ul>
-        <li><strong>Email:</strong> feedback@tvtracker.app</li>
-        <li><strong>GitHub:</strong> Open an issue on our repository</li>
-        <li><strong>In-App:</strong> Use the feedback link in the footer anytime</li>
-      </ul>
-      <h4>Response time</h4>
-      <p>We aim to respond to all feedback within 48 hours. For urgent issues, please mention "URGENT" in your subject line.</p>
-      <h4>Feature requests</h4>
-      <p>Have an idea for TV Tracker? We're always looking for ways to make the app better. Describe your idea in detail and we'll consider it for future updates.</p>
-      <p style="margin-top:1.5rem; color: var(--gold); font-weight: 600;">Thank you for helping us improve!</p>
-    `
+    isForm: true
   }
 };
 
@@ -131,21 +101,103 @@ function openLegalModal(type) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.id = 'legalModal';
-  modal.innerHTML = `
-    <div class="modal legal-modal">
-      <div class="legal-header">
-        <span class="legal-icon">${content.icon}</span>
-        <h2 class="legal-title">${content.title}</h2>
-        <button class="modal-close" onclick="closeLegalModal()">&times;</button>
+
+  if (content.isForm && (type === 'help' || type === 'feedback')) {
+    const formType = type === 'help' ? 'Feature Request' : 'Feedback / Support';
+    const placeholder = type === 'help'
+      ? 'Describe the feature you\'d like to see in TV Tracker...'
+      : 'Tell us about any issue or feedback you have...';
+    const webhookType = type === 'help' ? 'features' : 'feedback';
+
+    modal.innerHTML = `
+      <div class="modal legal-modal">
+        <div class="legal-header">
+          <span class="legal-icon">${content.icon}</span>
+          <h2 class="legal-title">${content.title}</h2>
+          <button class="modal-close" onclick="closeLegalModal()">&times;</button>
+        </div>
+        <div class="legal-body">
+          <p>Submit your ${formType.toLowerCase()} below. It will be sent directly to our team via Discord.</p>
+          <form id="webhookForm" onsubmit="handleWebhookSubmit(event, '${webhookType}')">
+            <div class="form-group">
+              <label class="form-label">Your Message *</label>
+              <textarea class="form-textarea webhook-textarea" id="webhookMessage" placeholder="${placeholder}" required></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="form-btn-cancel" onclick="closeLegalModal()">Cancel</button>
+              <button type="submit" class="form-btn-save webhook-submit" id="webhookSubmitBtn">Send ${formType}</button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div class="legal-body">
-        ${content.body}
+    `;
+  } else {
+    modal.innerHTML = `
+      <div class="modal legal-modal">
+        <div class="legal-header">
+          <span class="legal-icon">${content.icon}</span>
+          <h2 class="legal-title">${content.title}</h2>
+          <button class="modal-close" onclick="closeLegalModal()">&times;</button>
+        </div>
+        <div class="legal-body">
+          ${content.body}
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
+
   document.body.appendChild(modal);
   requestAnimationFrame(() => modal.classList.add('active'));
   modal.addEventListener('click', e => { if (e.target === modal) closeLegalModal(); });
+}
+
+async function handleWebhookSubmit(e, type) {
+  e.preventDefault();
+  const message = document.getElementById('webhookMessage').value.trim();
+  if (!message) return;
+
+  const btn = document.getElementById('webhookSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  let userEmail = 'Anonymous';
+  try {
+    if (typeof supabaseClient !== 'undefined') {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session?.user?.email) userEmail = data.session.user.email;
+    }
+  } catch (err) {}
+
+  const label = type === 'features' ? 'Feature Request' : 'Feedback';
+  const color = type === 'features' ? 5814783 : 16750848;
+
+  const embed = {
+    title: `📨 New ${label}`,
+    description: message,
+    color: color,
+    fields: [
+      { name: 'User', value: userEmail, inline: true },
+      { name: 'Type', value: label, inline: true },
+      { name: 'Page', value: window.location.pathname.split('/').pop() || 'index.html', inline: true }
+    ],
+    timestamp: new Date().toISOString(),
+    footer: { text: 'TV Tracker' }
+  };
+
+  try {
+    await fetch(DISCORD_WEBHOOKS[type], {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+    btn.textContent = 'Sent!';
+    btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+    setTimeout(() => closeLegalModal(), 1500);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = `Send ${label}`;
+    alert('Failed to send. Please try again.');
+  }
 }
 
 function closeLegalModal() {
