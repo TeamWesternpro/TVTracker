@@ -2050,6 +2050,122 @@ input, select, textarea { font-family: inherit; outline: none; }
   to { opacity: 0; transform: translateX(40px); }
 }
 
+/* ==================== PROFILE PAGE ==================== */
+.profile-page {
+  padding: 2rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+}
+
+.profile-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 0.3rem;
+}
+
+.profile-subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  border: 3px solid var(--border);
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-upload {
+  padding: 8px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--text-secondary);
+}
+
+.profile-avatar-upload:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+/* Navbar Avatar */
+.nav-profile-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  transition: var(--transition);
+}
+
+.nav-avatar:hover {
+  border-color: var(--gold);
+}
+
+.nav-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Auth Success */
+.auth-success {
+  color: #22c55e;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  text-align: center;
+}
+
 /* ==================== AUTH PAGE ==================== */
 .auth-page {
   display: flex;
