@@ -322,6 +322,8 @@
     }
 
     /* ===== Form Modal ===== */
+    let librarySearchTimeout = null;
+
     function openAddModal() { openFormModal(null); }
     async function openEditModal(id) { openFormModal(await getShowById(id)); }
 
@@ -338,6 +340,14 @@
         : '<div class="form-upload-icon">&#128247;</div><div class="form-upload-text">Click to upload poster</div>';
       const logoPreview = show && show.platformLogo ? `<img src="${show.platformLogo}" class="form-upload-preview">` : '<div class="form-upload-icon">&#127991;</div><div class="form-upload-text">Click to upload logo</div>';
 
+      const librarySearchHTML = !isEdit ? `
+        <div class="library-search-section">
+          <label class="form-label">&#128269; Search Series Library</label>
+          <input type="text" class="form-input" id="librarySearchInput" placeholder="Type a show name to search the library..." oninput="handleLibrarySearch(this.value)">
+          <div id="librarySearchResults" class="library-search-results"></div>
+        </div>
+      ` : '';
+
       const modal = document.createElement('div');
       modal.className = 'modal-overlay form-modal';
       modal.id = 'formModal';
@@ -345,6 +355,7 @@
         <div class="modal">
           <div class="modal-body">
             <h2 class="form-title">${isEdit ? 'Edit Show' : 'Add New Show'}</h2>
+            ${librarySearchHTML}
             <form id="showForm" onsubmit="handleFormSubmit(event, ${isEdit ? show.id : 'null'})">
               <div class="form-group">
                 <label class="form-label">Poster Image</label>
@@ -430,6 +441,63 @@
       modal.addEventListener('click', e => { if (e.target === modal) closeModal('formModal'); });
       renderCreatorsList();
       renderCastList();
+    }
+
+    /* ===== Library Search ===== */
+    async function handleLibrarySearch(query) {
+      const resultsEl = document.getElementById('librarySearchResults');
+      if (!resultsEl) return;
+      if (query.length < 2) { resultsEl.innerHTML = ''; return; }
+
+      clearTimeout(librarySearchTimeout);
+      librarySearchTimeout = setTimeout(async () => {
+        const results = await searchLibrary(query);
+        if (results.length === 0) {
+          resultsEl.innerHTML = '<div class="library-search-empty">No matches found. Fill in the form below to create a new entry.</div>';
+          return;
+        }
+        resultsEl.innerHTML = results.slice(0, 5).map(s => {
+          const poster = s.poster ? `<img src="${s.poster}">` : '<span>&#128250;</span>';
+          return `
+            <div class="library-search-item" onclick='addFromLibrary(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
+              <div class="library-search-poster">${poster}</div>
+              <div class="library-search-info">
+                <div class="library-search-title">${s.title}</div>
+                <div class="library-search-meta">${s.releaseDate ? s.releaseDate.substring(0, 4) : ''} ${s.genre ? '&#8226; ' + s.genre.split(',')[0] : ''} ${s.platform ? '&#8226; ' + s.platform : ''}</div>
+              </div>
+              <button type="button" class="library-add-btn">+ Add</button>
+            </div>
+          `;
+        }).join('');
+      }, 400);
+    }
+
+    function addFromLibrary(series) {
+      formCreators = JSON.parse(JSON.stringify(series.creators || []));
+      formCast = JSON.parse(JSON.stringify(series.cast || []));
+      posterData = series.poster || '';
+      logoData = series.platformLogo || '';
+
+      document.getElementById('formTitle').value = series.title || '';
+      document.getElementById('formDesc').value = series.description || '';
+      document.getElementById('formDate').value = series.releaseDate || '';
+      document.getElementById('formGenre').value = series.genre || '';
+      document.getElementById('formLanguage').value = series.language || '';
+      document.getElementById('formPlatform').value = series.platform || '';
+
+      const posterArea = document.getElementById('posterUploadContent');
+      if (posterArea && posterData) posterArea.innerHTML = `<img src="${posterData}" class="form-upload-preview">`;
+
+      const logoArea = document.getElementById('logoUploadContent');
+      if (logoArea && logoData) logoArea.innerHTML = `<img src="${logoData}" class="form-upload-preview">`;
+
+      renderCreatorsList();
+      renderCastList();
+
+      const resultsEl = document.getElementById('librarySearchResults');
+      if (resultsEl) resultsEl.innerHTML = '<div class="library-search-selected">&#10003; Series loaded from library. Edit fields if needed, then save.</div>';
+
+      showToast('Series loaded from library!', 'success');
     }
 
     let posterData = '';
