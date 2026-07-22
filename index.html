@@ -156,7 +156,7 @@
   <script>
     async function initHome() {
       if (!(await requireAuth())) return;
-      await updateNavbarAuth();
+      updateNavbarAuth();
       const counts = await getStatusCounts();
       document.getElementById('statTotal').textContent = counts.All;
       document.getElementById('statWatched').textContent = counts.Watched;
