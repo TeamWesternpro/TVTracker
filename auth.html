@@ -37,7 +37,27 @@
           <button type="submit" class="form-btn-save auth-submit" id="loginBtn">Log In</button>
         </form>
 
+        <p class="auth-switch"><a href="#" onclick="showForgot(event)">Forgot password?</a></p>
         <p class="auth-switch">Don't have an account? <a href="#" onclick="showSignup(event)">Sign Up</a></p>
+      </div>
+
+      <!-- Forgot Password -->
+      <div class="auth-card" id="forgotCard" style="display:none;">
+        <div class="auth-icon">&#128274;</div>
+        <h2 class="auth-title">Reset Password</h2>
+        <p class="auth-subtitle">Enter your email and we'll send you a reset link</p>
+
+        <form id="forgotForm" onsubmit="handleForgot(event)">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="forgotEmail" placeholder="you@example.com" required>
+          </div>
+          <div class="auth-error" id="forgotError"></div>
+          <div class="auth-success" id="forgotSuccess"></div>
+          <button type="submit" class="form-btn-save auth-submit" id="forgotBtn">Send Reset Link</button>
+        </form>
+
+        <p class="auth-switch"><a href="#" onclick="showLogin(event)">Back to Log In</a></p>
       </div>
 
       <!-- Signup Form -->
@@ -86,7 +106,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers.</p>
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
       </div>
     </footer>
   </div>
@@ -100,12 +120,21 @@
       e.preventDefault();
       document.getElementById('loginCard').style.display = '';
       document.getElementById('signupCard').style.display = 'none';
+      document.getElementById('forgotCard').style.display = 'none';
     }
 
     function showSignup(e) {
       e.preventDefault();
       document.getElementById('loginCard').style.display = 'none';
       document.getElementById('signupCard').style.display = '';
+      document.getElementById('forgotCard').style.display = 'none';
+    }
+
+    function showForgot(e) {
+      e.preventDefault();
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('signupCard').style.display = 'none';
+      document.getElementById('forgotCard').style.display = '';
     }
 
     async function handleLogin(e) {
@@ -128,6 +157,31 @@
         return;
       }
       window.location.href = 'tracker.html';
+    }
+
+    async function handleForgot(e) {
+      e.preventDefault();
+      const email = document.getElementById('forgotEmail').value.trim();
+      const errorEl = document.getElementById('forgotError');
+      const successEl = document.getElementById('forgotSuccess');
+      const btn = document.getElementById('forgotBtn');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/auth.html'
+      });
+
+      btn.textContent = 'Send Reset Link';
+      btn.disabled = false;
+
+      if (error) {
+        errorEl.textContent = error.message;
+        return;
+      }
+      successEl.textContent = 'Check your email for the password reset link.';
     }
 
     async function handleSignup(e) {
@@ -168,7 +222,7 @@
         return;
       }
 
-      window.location.href = 'tracker.html';
+      window.location.href = 'profile.html';
     }
 
     async function initAuth() {
