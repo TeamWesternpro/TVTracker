@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TV Tracker - Tracker</title>
+  <title>TV Tracker - Profile</title>
   <link rel="icon" type="image/png" href="image/favicon.png">
   <link rel="stylesheet" href="css/styles.css?v=3">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,7 +17,7 @@
     <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
     <div class="nav-links">
       <a href="index.html">Home</a>
-      <a href="tracker.html" class="active">Tracker</a>
+      <a href="tracker.html">Tracker</a>
       <a href="calendar.html">Calendar</a>
       <a href="about.html">About Us</a>
       <a href="profile.html" class="nav-profile-link" id="navProfile" style="display:none;">
@@ -28,44 +28,37 @@
   </nav>
 
   <div class="main-content">
-    <div class="tracker-page">
-      <div class="tracker-banner">
-        <span>&#128221;</span>
-        <p>Have an issue with your account or want to request a new feature? Use the <strong>Help Center</strong> or <strong>Feedback</strong> links in the footer below to reach our team.</p>
-      </div>
+    <div class="profile-page">
+      <div class="profile-card">
+        <h2 class="profile-title">Customize Profile</h2>
+        <p class="profile-subtitle">Personalize your TV Tracker experience</p>
 
-      <div class="tracker-header">
-        <h2>My Shows</h2>
-        <div class="tracker-header-actions">
-          <div class="search-bar">
-            <span class="search-icon">&#128269;</span>
-            <input type="text" class="search-input" id="searchInput" placeholder="Search shows..." oninput="handleSearch()">
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-large" id="profileAvatarLarge">
+            <span id="profileAvatarText">?</span>
           </div>
-          <button class="add-btn" id="addShowBtn" onclick="openAddModal()">
-            &#43; Add Show
-          </button>
+          <label class="profile-avatar-upload" for="avatarInput">
+            &#128247; Change Avatar
+            <input type="file" accept="image/*" id="avatarInput" onchange="handleAvatarUpload(this)" style="display:none;">
+          </label>
         </div>
-      </div>
 
-      <div class="filter-bar" id="filterBar">
-        <button class="filter-btn active" data-filter="All" onclick="filterShows('All')">
-          All <span class="filter-count" id="countAll">0</span>
-        </button>
-        <button class="filter-btn" data-filter="Currently Watching" onclick="filterShows('Currently Watching')">
-          Currently Watching <span class="filter-count" id="countWatching">0</span>
-        </button>
-        <button class="filter-btn" data-filter="Watched" onclick="filterShows('Watched')">
-          Watched <span class="filter-count" id="countWatched">0</span>
-        </button>
-        <button class="filter-btn" data-filter="Plan to Watch" onclick="filterShows('Plan to Watch')">
-          Plan to Watch <span class="filter-count" id="countPlan">0</span>
-        </button>
-        <button class="filter-btn" data-filter="Upcoming" onclick="filterShows('Upcoming')">
-          Upcoming <span class="filter-count" id="countUpcoming">0</span>
-        </button>
-      </div>
+        <form id="profileForm" onsubmit="handleProfileSave(event)">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="profileUsername" placeholder="Enter your username" maxlength="30">
+          </div>
 
-      <div class="shows-grid" id="showsGrid"></div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="profileEmail" disabled>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="form-btn-save" id="profileSaveBtn">Save Profile</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <footer class="footer">
@@ -107,500 +100,128 @@
 
   <script src="js/config.js?v=3"></script>
   <script src="js/auth.js?v=3"></script>
-  <script src="js/data.js?v=3"></script>
   <script src="js/legal.js?v=3"></script>
   <script>
-    let currentFilter = 'All';
-    let searchQuery = '';
-    let formCreators = [];
-    let formCast = [];
+    let avatarData = '';
 
-    function handleSearch() {
-      searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-      renderShows();
-    }
-
-    async function initTracker() {
+    async function initProfile() {
       if (!(await requireAuth())) return;
       await updateNavbarAuth();
       const user = await getCurrentUser();
-      document.getElementById('addShowBtn').style.display = user ? '' : 'none';
-      await updateFilterCounts();
-      await renderShows();
-    }
+      if (!user) return;
 
-    async function updateFilterCounts() {
-      const counts = await getStatusCounts();
-      document.getElementById('countAll').textContent = counts.All;
-      document.getElementById('countWatching').textContent = counts['Currently Watching'];
-      document.getElementById('countWatched').textContent = counts.Watched;
-      document.getElementById('countPlan').textContent = counts['Plan to Watch'];
-      document.getElementById('countUpcoming').textContent = counts.Upcoming;
-    }
+      document.getElementById('profileEmail').value = user.email;
 
-    async function filterShows(status) {
-      currentFilter = status;
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === status);
-      });
-      await renderShows();
-    }
-
-    async function renderShows() {
-      let shows = await getShowsByStatus(currentFilter);
-      if (searchQuery) {
-        shows = shows.filter(s => s.title.toLowerCase().includes(searchQuery));
+      const profile = await getProfile(user.id);
+      if (profile) {
+        document.getElementById('profileUsername').value = profile.username || '';
+        if (profile.avatar) {
+          avatarData = profile.avatar;
+          document.getElementById('profileAvatarLarge').innerHTML = `<img src="${profile.avatar}">`;
+        } else {
+          const initial = (profile.username || user.email)[0].toUpperCase();
+          document.getElementById('profileAvatarLarge').innerHTML = `<span>${initial}</span>`;
+        }
+      } else {
+        const initial = user.email[0].toUpperCase();
+        document.getElementById('profileAvatarLarge').innerHTML = `<span>${initial}</span>`;
       }
-      const grid = document.getElementById('showsGrid');
-      const user = await getCurrentUser();
-      if (shows.length === 0) {
-        const msg = searchQuery ? `No shows matching "${searchQuery}"` : 'No shows found';
-        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">&#128250;</div><h3>${msg}</h3><p>Try a different filter or search term.</p></div>`;
+    }
+
+    async function getProfile(userId) {
+      if (typeof supabaseClient === 'undefined') return JSON.parse(localStorage.getItem('tvTracker_profile') || 'null');
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (e) {
+        return JSON.parse(localStorage.getItem('tvTracker_profile') || 'null');
+      }
+    }
+
+    async function saveProfile(userId, username, avatar) {
+      if (typeof supabaseClient === 'undefined') {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar }));
         return;
       }
-      grid.innerHTML = shows.map(show => createShowCard(show, user)).join('');
-    }
+      try {
+        const { data: existing } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
 
-    function createShowCard(show, user) {
-      const statusClass = getStatusClass(show.status);
-      const posterHTML = show.poster
-        ? `<img src="${show.poster}" alt="${show.title}">`
-        : `<div class="card-poster-placeholder">&#128250;</div>`;
-      const genres = show.genre.split(',').map(g => `<span class="card-genre-tag">${g.trim()}</span>`).join('');
-      const adminHTML = user ? `
-            <div class="card-admin-actions">
-              <button class="edit-btn" onclick="event.stopPropagation(); openEditModal(${show.id})" title="Edit">&#9998;</button>
-              <button class="delete-btn" onclick="event.stopPropagation(); confirmDelete(${show.id})" title="Delete">&#128465;</button>
-            </div>` : '';
-      const platformHTML = show.platform
-        ? `<div class="card-meta-item">&#128225; <span>${show.platform}</span></div>`
-        : '';
-      return `
-        <div class="show-card ${statusClass}" onclick="openDetailModal(${show.id})">
-          <div class="card-poster">
-            ${posterHTML}
-            <span class="card-status-tag ${statusClass}">${show.status}</span>
-            ${adminHTML}
-          </div>
-          <div class="card-body">
-            <h4 class="card-title">${show.title}</h4>
-            <p class="card-desc">${show.description}</p>
-            <div class="card-meta">
-              <div class="card-meta-item">&#128197; <span>${formatDate(show.releaseDate)}</span></div>
-              <div class="card-meta-item">&#127760; <span>${show.language}</span></div>
-              ${platformHTML}
-            </div>
-            <div class="card-genres">${genres}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function getStatusClass(status) {
-      switch (status) {
-        case 'Watched': return 'watched';
-        case 'Currently Watching': return 'watching';
-        case 'Plan to Watch': return 'plan';
-        case 'Upcoming': return 'upcoming';
-        default: return '';
+        if (existing) {
+          await supabaseClient
+            .from('profiles')
+            .update({ username, avatar })
+            .eq('user_id', userId);
+        } else {
+          await supabaseClient
+            .from('profiles')
+            .insert([{ user_id: userId, username, avatar }]);
+        }
+      } catch (e) {
+        console.error('Profile save error:', e);
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar }));
       }
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const d = new Date(dateStr + 'T00:00:00');
-      const day = d.getDate();
-      const month = d.toLocaleDateString('en-US', { month: 'short' });
-      const year = d.getFullYear();
-      return `${day} ${month} ${year}`;
-    }
-
-    function renderPersonCard(p) {
-      const initials = p.name ? p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??';
-      const photoHTML = p.photo ? `<img src="${p.photo}">` : initials;
-      const statusBadge = p.status ? `<span class="person-status-badge ${p.status.toLowerCase()}">${p.status}</span>` : '';
-      return `
-        <div class="person-card">
-          <div class="person-avatar">${photoHTML}</div>
-          <div class="person-info">
-            <div class="person-name">${p.name}</div>
-            <div class="person-role">${p.role || ''}</div>
-          </div>
-          ${statusBadge}
-        </div>
-      `;
-    }
-
-    function renderCastCard(c) {
-      const initials = c.actor ? c.actor.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??';
-      const photoHTML = c.photo ? `<img src="${c.photo}">` : initials;
-      return `
-        <div class="person-card">
-          <div class="person-avatar">${photoHTML}</div>
-          <div class="person-info">
-            <div class="person-name">${c.actor}</div>
-            <div class="person-role">${c.character ? 'as ' + c.character : ''}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    /* ===== Detail Modal ===== */
-    async function openDetailModal(id) {
-      const show = await getShowById(id);
-      if (!show) return;
-      const statusClass = getStatusClass(show.status);
-      const posterHTML = show.poster
-        ? `<img src="${show.poster}" alt="${show.title}">`
-        : `<div class="card-poster-placeholder">&#128250;</div>`;
-      const genres = show.genre.split(',').map(g => `<span class="modal-genre-tag">${g.trim()}</span>`).join('');
-      const creatorsHTML = (show.creators || []).length > 0
-        ? show.creators.map(c => renderPersonCard(c)).join('')
-        : '<span style="color:var(--text-muted)">Not specified</span>';
-      const castHTML = (show.cast || []).length > 0
-        ? show.cast.map(c => renderCastCard(c)).join('')
-        : '<span style="color:var(--text-muted)">Not specified</span>';
-
-      const existing = document.getElementById('detailModal');
-      if (existing) existing.remove();
-
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay';
-      modal.id = 'detailModal';
-      modal.innerHTML = `
-        <div class="modal">
-          <div class="modal-poster">
-            ${posterHTML}
-            <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
-          </div>
-          <div class="modal-body">
-            <span class="modal-status-tag ${statusClass}">${show.status}</span>
-            <h2 class="modal-title">${show.title}</h2>
-            <p class="modal-desc">${show.description}</p>
-            <div class="modal-info-grid">
-              <div class="modal-info-item">
-                <div class="modal-info-label">Release Date</div>
-                <div class="modal-info-value">${formatDate(show.releaseDate)}</div>
-              </div>
-              <div class="modal-info-item">
-                <div class="modal-info-label">Language</div>
-                <div class="modal-info-value">${show.language}</div>
-              </div>
-              <div class="modal-info-item">
-                <div class="modal-info-label">Platform</div>
-                <div class="modal-info-value">${show.platform || 'Not specified'}</div>
-              </div>
-            </div>
-            ${show.platformLogo ? `
-            <div class="modal-platform">
-              <div class="modal-platform-logo"><img src="${show.platformLogo}" alt="${show.platform}"></div>
-              <div>
-                <div class="modal-info-label">Platform Logo</div>
-                <div class="modal-info-value">${show.platform}</div>
-              </div>
-            </div>` : ''}
-            <div class="modal-section-title">Genres</div>
-            <div class="modal-genres">${genres}</div>
-            <div class="modal-section-title">Creators</div>
-            <div class="person-list">${creatorsHTML}</div>
-            <div class="modal-section-title">Cast & Characters</div>
-            <div class="person-list">${castHTML}</div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      requestAnimationFrame(() => modal.classList.add('active'));
-      modal.addEventListener('click', e => { if (e.target === modal) closeModal('detailModal'); });
-    }
-
-    function closeModal(id) {
-      const modal = document.getElementById(id);
-      if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.remove(), 300);
-      }
-    }
-
-    /* ===== Form Modal ===== */
-    function openAddModal() { openFormModal(null); }
-    async function openEditModal(id) { openFormModal(await getShowById(id)); }
-
-    function openFormModal(show) {
-      const isEdit = !!show;
-      const existing = document.getElementById('formModal');
-      if (existing) existing.remove();
-
-      formCreators = isEdit ? JSON.parse(JSON.stringify(show.creators || [])) : [];
-      formCast = isEdit ? JSON.parse(JSON.stringify(show.cast || [])) : [];
-
-      const posterPreview = show && show.poster
-        ? `<img src="${show.poster}" class="form-upload-preview">`
-        : '<div class="form-upload-icon">&#128247;</div><div class="form-upload-text">Click to upload poster</div>';
-      const logoPreview = show && show.platformLogo ? `<img src="${show.platformLogo}" class="form-upload-preview">` : '<div class="form-upload-icon">&#127991;</div><div class="form-upload-text">Click to upload logo</div>';
-
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay form-modal';
-      modal.id = 'formModal';
-      modal.innerHTML = `
-        <div class="modal">
-          <div class="modal-body">
-            <h2 class="form-title">${isEdit ? 'Edit Show' : 'Add New Show'}</h2>
-            <form id="showForm" onsubmit="handleFormSubmit(event, ${isEdit ? show.id : 'null'})">
-              <div class="form-group">
-                <label class="form-label">Poster Image</label>
-                <div class="form-upload" id="posterUploadArea">
-                  <input type="file" accept="image/*" id="posterInput" onchange="handleImagePreview(this, 'poster')">
-                  <div id="posterUploadContent">${posterPreview}</div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Series Title</label>
-                <input type="text" class="form-input" id="formTitle" placeholder="e.g. Breaking Bad" value="${isEdit ? show.title : ''}">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-textarea" id="formDesc" placeholder="Brief description of the series...">${isEdit ? show.description : ''}</textarea>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Release Date</label>
-                  <input type="date" class="form-input" id="formDate" value="${isEdit ? show.releaseDate : ''}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Status</label>
-                  <select class="form-select" id="formStatus">
-                    <option value="">Select Status</option>
-                    <option value="Plan to Watch" ${isEdit && show.status === 'Plan to Watch' ? 'selected' : ''}>Plan to Watch</option>
-                    <option value="Currently Watching" ${isEdit && show.status === 'Currently Watching' ? 'selected' : ''}>Currently Watching</option>
-                    <option value="Watched" ${isEdit && show.status === 'Watched' ? 'selected' : ''}>Watched</option>
-                    <option value="Upcoming" ${isEdit && show.status === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Genre</label>
-                  <input type="text" class="form-input" id="formGenre" placeholder="e.g. Drama, Thriller" value="${isEdit ? show.genre : ''}">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Language</label>
-                  <input type="text" class="form-input" id="formLanguage" placeholder="e.g. English" value="${isEdit ? show.language : ''}">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Platform</label>
-                <input type="text" class="form-input" id="formPlatform" placeholder="e.g. Netflix" value="${isEdit ? show.platform : ''}">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Platform Logo</label>
-                <div class="form-upload" id="logoUploadArea">
-                  <input type="file" accept="image/*" id="logoInput" onchange="handleImagePreview(this, 'logo')">
-                  <div id="logoUploadContent">${logoPreview}</div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Creators</label>
-                <div class="form-person-list" id="creatorsList"></div>
-                <button type="button" class="add-person-btn" onclick="addCreatorEntry()">&#43; Add Creator</button>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Cast & Characters</label>
-                <div class="form-person-list" id="castList"></div>
-                <button type="button" class="add-person-btn" onclick="addCastEntry()">&#43; Add Cast Member</button>
-              </div>
-
-              <div class="form-actions">
-                <button type="button" class="form-btn-cancel" onclick="closeModal('formModal')">Cancel</button>
-                <button type="submit" class="form-btn-save">${isEdit ? 'Update Show' : 'Add Show'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      requestAnimationFrame(() => modal.classList.add('active'));
-      modal.addEventListener('click', e => { if (e.target === modal) closeModal('formModal'); });
-      renderCreatorsList();
-      renderCastList();
-    }
-
-    let posterData = '';
-    let logoData = '';
-
-    function handleImagePreview(input, type) {
+    function handleAvatarUpload(input) {
       const file = input.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        if (type === 'poster') posterData = e.target.result;
-        else logoData = e.target.result;
-        const container = input.closest('.form-upload');
-        container.innerHTML = `<img src="${e.target.result}" class="form-upload-preview"><input type="file" accept="image/*" onchange="handleImagePreview(this, '${type}')" style="position:absolute;inset:0;opacity:0;cursor:pointer;">`;
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxSize = 200;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+          else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          avatarData = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('profileAvatarLarge').innerHTML = `<img src="${avatarData}">`;
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    /* ===== Creators ===== */
-    function addCreatorEntry() {
-      formCreators.push({ name: '', role: '', photo: '', status: 'Alive' });
-      renderCreatorsList();
-    }
-
-    function removeCreatorEntry(idx) {
-      formCreators.splice(idx, 1);
-      renderCreatorsList();
-    }
-
-    function updateCreator(idx, field, val) {
-      formCreators[idx][field] = val;
-    }
-
-    function handleCreatorPhoto(input, idx) {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        formCreators[idx].photo = e.target.result;
-        renderCreatorsList();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function renderCreatorsList() {
-      const container = document.getElementById('creatorsList');
-      if (!container) return;
-      container.innerHTML = formCreators.map((c, i) => {
-        const photoHTML = c.photo ? `<img src="${c.photo}">` : `<span class="upload-icon">&#128247;</span>`;
-        return `
-          <div class="form-person-entry">
-            <div class="form-person-upload">
-              ${photoHTML}
-              <input type="file" accept="image/*" onchange="handleCreatorPhoto(this, ${i})">
-            </div>
-            <div class="form-person-fields">
-              <div class="form-person-row">
-                <input type="text" class="form-input" placeholder="Name" value="${c.name}" oninput="updateCreator(${i}, 'name', this.value)">
-                <input type="text" class="form-input" placeholder="Role (e.g. Showrunner)" value="${c.role}" oninput="updateCreator(${i}, 'role', this.value)">
-              </div>
-              <div class="form-person-row">
-                <select class="form-select" onchange="updateCreator(${i}, 'status', this.value)">
-                  <option value="Alive" ${c.status === 'Alive' ? 'selected' : ''}>Alive</option>
-                  <option value="Died" ${c.status === 'Died' ? 'selected' : ''}>Died</option>
-                </select>
-              </div>
-            </div>
-            <button type="button" class="form-person-remove" onclick="removeCreatorEntry(${i})">&times;</button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    /* ===== Cast ===== */
-    function addCastEntry() {
-      formCast.push({ actor: '', character: '', photo: '' });
-      renderCastList();
-    }
-
-    function removeCastEntry(idx) {
-      formCast.splice(idx, 1);
-      renderCastList();
-    }
-
-    function updateCast(idx, field, val) {
-      formCast[idx][field] = val;
-    }
-
-    function handleCastPhoto(input, idx) {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        formCast[idx].photo = e.target.result;
-        renderCastList();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function renderCastList() {
-      const container = document.getElementById('castList');
-      if (!container) return;
-      container.innerHTML = formCast.map((c, i) => {
-        const photoHTML = c.photo ? `<img src="${c.photo}">` : `<span class="upload-icon">&#128100;</span>`;
-        return `
-          <div class="form-person-entry">
-            <div class="form-person-upload">
-              ${photoHTML}
-              <input type="file" accept="image/*" onchange="handleCastPhoto(this, ${i})">
-            </div>
-            <div class="form-person-fields">
-              <div class="form-person-row">
-                <input type="text" class="form-input" placeholder="Actor name" value="${c.actor}" oninput="updateCast(${i}, 'actor', this.value)">
-                <input type="text" class="form-input" placeholder="Character name" value="${c.character}" oninput="updateCast(${i}, 'character', this.value)">
-              </div>
-            </div>
-            <button type="button" class="form-person-remove" onclick="removeCastEntry(${i})">&times;</button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    /* ===== Submit ===== */
-    async function handleFormSubmit(e, id) {
+    async function handleProfileSave(e) {
       e.preventDefault();
-      let existingShow = null;
-      if (id) existingShow = await getShowById(id);
-      const data = {
-        title: document.getElementById('formTitle').value.trim(),
-        description: document.getElementById('formDesc').value.trim(),
-        releaseDate: document.getElementById('formDate').value,
-        genre: document.getElementById('formGenre').value.trim(),
-        language: document.getElementById('formLanguage').value.trim(),
-        status: document.getElementById('formStatus').value,
-        platform: document.getElementById('formPlatform').value.trim(),
-        creators: formCreators.filter(c => c.name.trim()),
-        cast: formCast.filter(c => c.actor.trim()),
-        poster: posterData || (existingShow?.poster || ''),
-        platformLogo: logoData || (existingShow?.platformLogo || '')
-      };
-      if (id) {
-        await updateShow(id, data);
-        showToast('Show updated successfully!', 'success');
-      } else {
-        await addShow(data);
-        showToast('Show added successfully!', 'success');
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      const btn = document.getElementById('profileSaveBtn');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      const username = document.getElementById('profileUsername').value.trim();
+      await saveProfile(user.id, username, avatarData);
+
+      try {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: avatarData }));
+      } catch (e) {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: '' }));
       }
-      posterData = '';
-      logoData = '';
-      closeModal('formModal');
-      await initTracker();
+
+      btn.textContent = 'Saved!';
+      btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      setTimeout(() => {
+        btn.textContent = 'Save Profile';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
     }
 
-    async function confirmDelete(id) {
-      if (confirm('Are you sure you want to delete this show?')) {
-        await deleteShow(id);
-        showToast('Show deleted successfully', 'success');
-        await initTracker();
-      }
-    }
-
-    function showToast(message, type) {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type || 'info'}`;
-      toast.textContent = message;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    document.addEventListener('DOMContentLoaded', initTracker);
+    document.addEventListener('DOMContentLoaded', initProfile);
   </script>
 </body>
 </html>
