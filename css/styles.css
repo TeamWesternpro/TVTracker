@@ -2419,3 +2419,116 @@ input, select, textarea { font-family: inherit; outline: none; }
   .stat-card { padding: 1.2rem; }
   .stat-number { font-size: 1.8rem; }
 }
+
+/* ==================== PERSONAL CALENDAR BUTTONS ==================== */
+.personal-calendar-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.cal-btn:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.cal-btn.google { color: #4285f4; border-color: #4285f430; }
+.cal-btn.google:hover { background: #4285f410; }
+.cal-btn.outlook { color: #0078d4; border-color: #0078d430; }
+.cal-btn.outlook:hover { background: #0078d410; }
+.cal-btn.yahoo { color: #6001d2; border-color: #6001d230; }
+.cal-btn.yahoo:hover { background: #6001d210; }
+.cal-btn.apple { color: #555; border-color: #5553; }
+.cal-btn.apple:hover { background: #55555510; }
+
+/* Add to Calendar checkbox */
+.form-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.form-checkbox-group:hover {
+  border-color: var(--gold);
+}
+
+.form-checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.form-checkbox-group label {
+  cursor: pointer;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Duplicate warning in calendar form */
+.duplicate-warning {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 6px;
+  display: none;
+}
+
+.duplicate-warning.visible {
+  display: block;
+}
+
+/* Calendar event personal calendar links */
+.cal-event-cal-btns {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.cal-event-cal-btns a,
+.cal-event-cal-btns button {
+  font-size: 0.55rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cal-event-cal-btns a:hover,
+.cal-event-cal-btns button:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+/* Modal section title for personal calendar */
+.modal-section-title.cal-section {
+  margin-top: 1.2rem;
+}
