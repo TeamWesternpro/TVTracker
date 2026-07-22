@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TV Tracker - Tracker</title>
   <link rel="icon" type="image/png" href="image/favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=3">
+  <link rel="stylesheet" href="css/styles.css?v=4">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -105,10 +105,10 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="js/config.js?v=3"></script>
-  <script src="js/auth.js?v=3"></script>
-  <script src="js/data.js?v=3"></script>
-  <script src="js/legal.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/data.js?v=4"></script>
+  <script src="js/legal.js?v=4"></script>
   <script>
     let currentFilter = 'All';
     let searchQuery = '';
@@ -458,12 +458,17 @@
         }
         resultsEl.innerHTML = results.slice(0, 5).map(s => {
           const poster = s.poster ? `<img src="${s.poster}">` : '<span>&#128250;</span>';
+          const year = s.releaseDate ? s.releaseDate.substring(0, 4) : '';
+          const genreFirst = s.genre ? s.genre.split(',')[0].trim() : '';
+          const metaParts = [year, genreFirst, s.platform].filter(Boolean).join(' &middot; ');
+          const statusColors = { 'Watched': '#22c55e', 'Currently Watching': '#eab308', 'Plan to Watch': '#a855f7', 'Upcoming': '#ef4444' };
+          const statusDot = s.status ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${statusColors[s.status] || '#888'};"></span> ${s.status}` : '';
           return `
             <div class="library-search-item" onclick='addFromLibrary(${JSON.stringify(s).replace(/'/g, "&#39;")})'>
               <div class="library-search-poster">${poster}</div>
               <div class="library-search-info">
                 <div class="library-search-title">${s.title}</div>
-                <div class="library-search-meta">${s.releaseDate ? s.releaseDate.substring(0, 4) : ''} ${s.genre ? '&#8226; ' + s.genre.split(',')[0] : ''} ${s.platform ? '&#8226; ' + s.platform : ''}</div>
+                <div class="library-search-meta">${metaParts ? `<span>${metaParts}</span>` : ''} ${statusDot ? `<span>${statusDot}</span>` : ''}</div>
               </div>
               <button type="button" class="library-add-btn">+ Add</button>
             </div>
