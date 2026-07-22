@@ -21,13 +21,12 @@ function initSupabase() {
   }
 }
 
-// ===== Sample Data (empty - user adds their own shows) =====
 const SampleShows = [];
 
-// ===== Normalize show data (migrate old formats) =====
 function supabaseToLocal(row) {
   return {
     id: row.id,
+    user_id: row.user_id || '',
     poster: row.poster || '',
     title: row.title || '',
     description: row.description || '',
@@ -93,14 +92,23 @@ function saveShowsLocal(shows) {
   localStorage.setItem(DB_KEY, JSON.stringify(shows));
 }
 
+// ===== Get current user ID helper =====
+async function getUserId() {
+  if (typeof supabaseClient === 'undefined') return null;
+  const { data } = await supabaseClient.auth.getSession();
+  return data.session?.user?.id || null;
+}
+
 // ===== Public API =====
 
 async function getShows() {
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const { data, error } = await supabaseClient
         .from('shows')
         .select('*')
+        .eq('user_id', userId)
         .order('id', { ascending: false });
       if (error) throw error;
       return data.map(s => normalizeShow(supabaseToLocal(s)));
@@ -113,11 +121,11 @@ async function getShows() {
 }
 
 async function addShow(show) {
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const supabaseData = localToSupabase(show);
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) supabaseData.user_id = user.id;
+      supabaseData.user_id = userId;
       const { data, error } = await supabaseClient
         .from('shows')
         .insert([supabaseData])
@@ -142,12 +150,14 @@ function addShowLocal(show) {
 }
 
 async function updateShow(id, updated) {
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const { data, error } = await supabaseClient
         .from('shows')
         .update(localToSupabase(updated))
         .eq('id', id)
+        .eq('user_id', userId)
         .select()
         .single();
       if (error) throw error;
@@ -172,12 +182,14 @@ function updateShowLocal(id, updated) {
 }
 
 async function deleteShow(id) {
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const { error } = await supabaseClient
         .from('shows')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
       if (error) throw error;
       return;
     } catch (e) {
@@ -194,12 +206,14 @@ function deleteShowLocal(id) {
 }
 
 async function getShowById(id) {
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const { data, error } = await supabaseClient
         .from('shows')
         .select('*')
         .eq('id', id)
+        .eq('user_id', userId)
         .single();
       if (error) throw error;
       return normalizeShow(supabaseToLocal(data));
@@ -213,11 +227,13 @@ async function getShowById(id) {
 
 async function getShowsByStatus(status) {
   if (status === 'All') return getShows();
-  if (useSupabase) {
+  const userId = await getUserId();
+  if (useSupabase && userId) {
     try {
       const { data, error } = await supabaseClient
         .from('shows')
         .select('*')
+        .eq('user_id', userId)
         .eq('status', status);
       if (error) throw error;
       return data.map(s => normalizeShow(supabaseToLocal(s)));
@@ -248,5 +264,4 @@ async function getShowsByMonth(year, month) {
   });
 }
 
-// Initialize on load
 initSupabase();
