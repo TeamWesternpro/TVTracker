@@ -89,7 +89,7 @@
 
     async function initCalendar() {
       if (!(await requireAuth())) return;
-      await updateNavbarAuth();
+      updateNavbarAuth();
       const user = await getCurrentUser();
       const addBtn = document.querySelector('.add-btn');
       if (addBtn) addBtn.style.display = user ? '' : 'none';
