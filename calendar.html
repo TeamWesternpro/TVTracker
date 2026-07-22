@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TV Tracker - Calendar</title>
   <link rel="icon" type="image/png" href="image/favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=5">
+  <link rel="stylesheet" href="css/styles.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -83,6 +83,7 @@
   <script src="js/config.js?v=5"></script>
   <script src="js/auth.js?v=5"></script>
   <script src="js/data.js?v=5"></script>
+  <script src="js/calendar-utils.js?v=1"></script>
   <script src="js/legal.js?v=5"></script>
   <script>
     let calYear, calMonth;
@@ -116,7 +117,7 @@
       const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
       const today = new Date();
       const shows = await getShows();
-      const calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
+      const calEvents = getCalEvents();
       let html = dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
       for (let i = firstDay - 1; i >= 0; i--) {
         html += `<div class="calendar-day other-month"><div class="calendar-day-number">${daysInPrevMonth - i}</div></div>`;
@@ -131,10 +132,25 @@
           if (s.status === 'Watched') cls = 'watched';
           else if (s.status === 'Currently Watching') cls = 'watching';
           else if (s.status === 'Plan to Watch') cls = 'plan';
-          return `<div class="calendar-event ${cls}" onclick="openDetailModal(${s.id})" title="${s.title}">${s.title}</div>`;
+          return `<div class="calendar-event ${cls}" onclick="openDetailModal(${s.id})" title="${s.title}">
+            <span>${s.title}</span>
+            <div class="cal-event-cal-btns">
+              <a href="${getGoogleCalendarUrl(s.title, s.releaseDate, s.description || '', s.platform || '')}" target="_blank" rel="noopener" title="Google Calendar">G</a>
+              <a href="${getOutlookCalendarUrl(s.title, s.releaseDate, s.description || '', s.platform || '')}" target="_blank" rel="noopener" title="Outlook">O</a>
+              <a href="${getYahooCalendarUrl(s.title, s.releaseDate, s.description || '', s.platform || '')}" target="_blank" rel="noopener" title="Yahoo">Y</a>
+              <button onclick="event.stopPropagation(); downloadICS('${icsEscape(s.title)}', '${s.releaseDate}', '${icsEscape(s.description || '')}', '${icsEscape(s.platform || '')}')" title="Download .ics">.ics</button>
+            </div>
+          </div>`;
         }).join('');
         eventsHTML += dayCalEvents.map(e =>
-          `<div class="calendar-event upcoming" title="${e.title}"><span>${e.title}</span><button class="cal-event-delete" onclick="event.stopPropagation(); deleteCalEvent(${e.id})" title="Delete">&times;</button></div>`
+          `<div class="calendar-event upcoming" title="${e.title}"><span>${e.title}</span>
+            <div class="cal-event-cal-btns">
+              <a href="${getGoogleCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Google Calendar">G</a>
+              <a href="${getOutlookCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Outlook">O</a>
+              <a href="${getYahooCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Yahoo">Y</a>
+              <button onclick="event.stopPropagation(); downloadICS('${icsEscape(e.title)}', '${e.releaseDate}', '', '')" title="Download .ics">.ics</button>
+            </div>
+            <button class="cal-event-delete" onclick="event.stopPropagation(); deleteCalEvent(${e.id})" title="Delete">&times;</button></div>`
         ).join('');
         html += `<div class="calendar-day ${isToday ? 'today' : ''}">
           <div class="calendar-day-number">${day}</div>
@@ -257,6 +273,9 @@
             <div class="person-list">${creatorsHTML}</div>
             <div class="modal-section-title">Cast & Characters</div>
             <div class="person-list">${castHTML}</div>
+            ${show.releaseDate ? `
+            <div class="modal-section-title cal-section">Add to Your Calendar</div>
+            ${renderPersonalCalendarButtons(show.title, show.releaseDate, show.description, show.platform)}` : ''}
           </div>
         </div>
       `;
@@ -288,11 +307,12 @@
             <form onsubmit="handleUpcomingSubmit(event)">
               <div class="form-group">
                 <label class="form-label">Series Title *</label>
-                <input type="text" class="form-input" id="upTitle" placeholder="e.g. The Last of Us Season 3" required>
+                <input type="text" class="form-input" id="upTitle" placeholder="e.g. The Last of Us Season 3" required oninput="checkDuplicate()">
               </div>
               <div class="form-group">
                 <label class="form-label">Release Date *</label>
-                <input type="date" class="form-input" id="upDate" required>
+                <input type="date" class="form-input" id="upDate" required oninput="checkDuplicate()">
+                <div class="duplicate-warning" id="dupWarning">⚠ This show is already on the calendar for that date.</div>
               </div>
               <div class="form-actions">
                 <button type="button" class="form-btn-cancel" onclick="closeModal('upcomingModal')">Cancel</button>
@@ -313,23 +333,28 @@
       const date = document.getElementById('upDate').value;
       if (!title || !date) return;
 
-      const calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
-      calEvents.push({
-        id: Date.now(),
-        title,
-        releaseDate: date,
-        status: 'Upcoming'
-      });
-      localStorage.setItem('tvTracker_calEvents', JSON.stringify(calEvents));
+      if (isCalEventDuplicate(title, date)) {
+        showToast('This show is already on the calendar for that date!', 'error');
+        return;
+      }
+
+      addCalEvent({ title, releaseDate: date, status: 'Upcoming' });
       closeModal('upcomingModal');
       await renderCalendar();
       showToast(`"${title}" added to calendar!`, 'success');
     }
 
+    function checkDuplicate() {
+      const title = document.getElementById('upTitle').value.trim();
+      const date = document.getElementById('upDate').value;
+      const warn = document.getElementById('dupWarning');
+      if (warn) {
+        warn.classList.toggle('visible', !!(title && date && isCalEventDuplicate(title, date)));
+      }
+    }
+
     async function deleteCalEvent(id) {
-      let calEvents = JSON.parse(localStorage.getItem('tvTracker_calEvents') || '[]');
-      calEvents = calEvents.filter(e => e.id !== id);
-      localStorage.setItem('tvTracker_calEvents', JSON.stringify(calEvents));
+      removeCalEvent(id);
       await renderCalendar();
       showToast('Calendar event deleted', 'success');
     }
