@@ -1,1 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - Profile</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=3">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="about.html">About Us</a>
+      <a href="profile.html" class="nav-profile-link" id="navProfile" style="display:none;">
+        <span class="nav-avatar" id="navAvatarSmall"></span>
+      </a>
+      <a href="auth.html" id="navAuth">Log In</a>
+    </div>
+  </nav>
 
+  <div class="main-content">
+    <div class="profile-page">
+      <div class="profile-card">
+        <h2 class="profile-title">Customize Profile</h2>
+        <p class="profile-subtitle">Personalize your TV Tracker experience</p>
+
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-large" id="profileAvatarLarge">
+            <span id="profileAvatarText">?</span>
+          </div>
+          <label class="profile-avatar-upload" for="avatarInput">
+            &#128247; Change Avatar
+            <input type="file" accept="image/*" id="avatarInput" onchange="handleAvatarUpload(this)" style="display:none;">
+          </label>
+        </div>
+
+        <form id="profileForm" onsubmit="handleProfileSave(event)">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="profileUsername" placeholder="Enter your username" maxlength="30">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="profileEmail" disabled>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="form-btn-save" id="profileSaveBtn">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="tracker.html">Tracker</a>
+            <a href="calendar.html">Calendar</a>
+            <a href="about.html">About Us</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('help')">Help Center</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('feedback')">Feedback</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js?v=3"></script>
+  <script src="js/auth.js?v=3"></script>
+  <script src="js/legal.js?v=3"></script>
+  <script>
+    let avatarData = '';
+
+    async function initProfile() {
+      if (!(await requireAuth())) return;
+      await updateNavbarAuth();
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      document.getElementById('profileEmail').value = user.email;
+
+      const profile = await getProfile(user.id);
+      if (profile) {
+        document.getElementById('profileUsername').value = profile.username || '';
+        if (profile.avatar) {
+          avatarData = profile.avatar;
+          document.getElementById('profileAvatarLarge').innerHTML = `<img src="${profile.avatar}">`;
+        } else {
+          const initial = (profile.username || user.email)[0].toUpperCase();
+          document.getElementById('profileAvatarLarge').innerHTML = `<span>${initial}</span>`;
+        }
+      } else {
+        const initial = user.email[0].toUpperCase();
+        document.getElementById('profileAvatarLarge').innerHTML = `<span>${initial}</span>`;
+      }
+    }
+
+    async function getProfile(userId) {
+      if (typeof supabaseClient === 'undefined') return JSON.parse(localStorage.getItem('tvTracker_profile') || 'null');
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (e) {
+        return JSON.parse(localStorage.getItem('tvTracker_profile') || 'null');
+      }
+    }
+
+    async function saveProfile(userId, username, avatar) {
+      if (typeof supabaseClient === 'undefined') {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar }));
+        return;
+      }
+      try {
+        const { data: existing } = await supabaseClient
+          .from('profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+
+        if (existing) {
+          await supabaseClient
+            .from('profiles')
+            .update({ username, avatar })
+            .eq('user_id', userId);
+        } else {
+          await supabaseClient
+            .from('profiles')
+            .insert([{ user_id: userId, username, avatar }]);
+        }
+      } catch (e) {
+        console.error('Profile save error:', e);
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar }));
+      }
+    }
+
+    function handleAvatarUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        avatarData = e.target.result;
+        document.getElementById('profileAvatarLarge').innerHTML = `<img src="${e.target.result}">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function handleProfileSave(e) {
+      e.preventDefault();
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      const btn = document.getElementById('profileSaveBtn');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      const username = document.getElementById('profileUsername').value.trim();
+      await saveProfile(user.id, username, avatarData);
+
+      localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: avatarData }));
+
+      btn.textContent = 'Saved!';
+      btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      setTimeout(() => {
+        btn.textContent = 'Save Profile';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+
+    document.addEventListener('DOMContentLoaded', initProfile);
+  </script>
+</body>
+</html>
