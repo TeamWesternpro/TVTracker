@@ -472,6 +472,30 @@ input, select, textarea { font-family: inherit; outline: none; }
   margin: 0 auto;
 }
 
+.tracker-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(30, 58, 95, 0.2), rgba(212, 168, 67, 0.08));
+  border: 1px solid rgba(212, 168, 67, 0.2);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+}
+
+.tracker-banner span { font-size: 1.3rem; }
+
+.tracker-banner p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tracker-banner strong {
+  color: var(--gold-light);
+}
+
 .filter-bar {
   display: flex;
   align-items: center;
@@ -1974,6 +1998,17 @@ input, select, textarea { font-family: inherit; outline: none; }
 .legal-body::-webkit-scrollbar { width: 6px; }
 .legal-body::-webkit-scrollbar-track { background: transparent; }
 .legal-body::-webkit-scrollbar-thumb { background: var(--bg-surface); border-radius: 3px; }
+
+/* Webhook Form */
+.webhook-textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+}
+
+.webhook-submit {
+  min-width: 160px;
+}
 
 /* ==================== TOAST ==================== */
 .toast-container {
