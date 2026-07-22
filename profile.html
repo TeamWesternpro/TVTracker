@@ -106,7 +106,7 @@
 
     async function initProfile() {
       if (!(await requireAuth())) return;
-      await updateNavbarAuth();
+      updateNavbarAuth();
       const user = await getCurrentUser();
       if (!user) return;
 
@@ -176,8 +176,20 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        avatarData = e.target.result;
-        document.getElementById('profileAvatarLarge').innerHTML = `<img src="${e.target.result}">`;
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxSize = 200;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+          else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          avatarData = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('profileAvatarLarge').innerHTML = `<img src="${avatarData}">`;
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -194,7 +206,11 @@
       const username = document.getElementById('profileUsername').value.trim();
       await saveProfile(user.id, username, avatarData);
 
-      localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: avatarData }));
+      try {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: avatarData }));
+      } catch (e) {
+        localStorage.setItem('tvTracker_profile', JSON.stringify({ username, avatar: '' }));
+      }
 
       btn.textContent = 'Saved!';
       btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
