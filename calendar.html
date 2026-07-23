@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TV Tracker - Calendar</title>
   <link rel="icon" type="image/png" href="image/favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=6">
+  <link rel="stylesheet" href="css/styles.css?v=7">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -133,7 +133,9 @@
           else if (s.status === 'Currently Watching') cls = 'watching';
           else if (s.status === 'Plan to Watch') cls = 'plan';
           return `<div class="calendar-event ${cls}" onclick="openDetailModal(${s.id})" title="${s.title}">
-            <span>${s.title}</span>
+            <div class="calendar-event-header">
+              <span class="calendar-event-title">${s.title}</span>
+            </div>
             <div class="cal-event-cal-btns">
               <a href="${getGoogleCalendarUrl(s.title, s.releaseDate, s.description || '', s.platform || '')}" target="_blank" rel="noopener" title="Google Calendar">G</a>
               <a href="${getOutlookCalendarUrl(s.title, s.releaseDate, s.description || '', s.platform || '')}" target="_blank" rel="noopener" title="Outlook">O</a>
@@ -143,14 +145,18 @@
           </div>`;
         }).join('');
         eventsHTML += dayCalEvents.map(e =>
-          `<div class="calendar-event upcoming" title="${e.title}"><span>${e.title}</span>
+          `<div class="calendar-event upcoming" title="${e.title}">
+            <div class="calendar-event-header">
+              <span class="calendar-event-title">${e.title}</span>
+              <button class="cal-event-delete" onclick="event.stopPropagation(); deleteCalEvent(${e.id})" title="Delete">&times;</button>
+            </div>
             <div class="cal-event-cal-btns">
               <a href="${getGoogleCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Google Calendar">G</a>
               <a href="${getOutlookCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Outlook">O</a>
               <a href="${getYahooCalendarUrl(e.title, e.releaseDate, '', '')}" target="_blank" rel="noopener" title="Yahoo">Y</a>
               <button onclick="event.stopPropagation(); downloadICS('${icsEscape(e.title)}', '${e.releaseDate}', '', '')" title="Download .ics">.ics</button>
             </div>
-            <button class="cal-event-delete" onclick="event.stopPropagation(); deleteCalEvent(${e.id})" title="Delete">&times;</button></div>`
+          </div>`
         ).join('');
         html += `<div class="calendar-day ${isToday ? 'today' : ''}">
           <div class="calendar-day-number">${day}</div>
