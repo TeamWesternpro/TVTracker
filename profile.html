@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Tracker - Profile &amp; Settings</title>
+  <link rel="icon" type="image/png" href="image/favicon.png">
+  <link rel="stylesheet" href="css/styles.css?v=8">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-brand-icon">TV</div>
+      <h1>TV Tracker</h1>
+    </a>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.nav-links').classList.toggle('open')">&#9776;</button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="tracker.html">Tracker</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="about.html">About Us</a>
+      <div id="navProfile" style="display:none;"></div>
+      <a href="auth.html" id="navAuth">Log In</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="profile-container">
+      
+      <!-- Profile Header Banner -->
+      <div class="profile-header-banner">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar-preview" id="bannerAvatar">
+            <span id="bannerAvatarText">?</span>
+          </div>
+          <label class="avatar-badge-btn" for="avatarFileInput" title="Upload Custom Photo">
+            &#128247;
+            <input type="file" accept="image/*" id="avatarFileInput" onchange="handleAvatarUpload(this)" style="display:none;">
+          </label>
+        </div>
+
+        <div class="profile-header-info">
+          <h2 class="profile-name-title">
+            <span id="bannerUsername">Username</span>
+            <span class="profile-role-badge">Member</span>
+          </h2>
+          <div class="profile-email-sub" id="bannerEmail">user@example.com</div>
+          
+          <div class="profile-stats-bar">
+            <div class="stat-pill">
+              <span>&#128250; Tracked:</span>
+              <strong id="statShowCount">0 shows</strong>
+            </div>
+            <div class="stat-pill">
+              <span>&#128737; 2FA:</span>
+              <strong id="stat2FA">Disabled</strong>
+            </div>
+            <div class="stat-pill">
+              <span>&#128197; Joined:</span>
+              <strong id="statJoined">2026</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="profile-tabs">
+        <button class="profile-tab-btn active" id="tabBtnProfile" onclick="switchProfileTab('profile')">
+          <span>&#128100;</span> Profile Details
+        </button>
+        <button class="profile-tab-btn" id="tabBtnSecurity" onclick="switchProfileTab('security')">
+          <span>&#128737;</span> Security &amp; 2FA
+        </button>
+      </div>
+
+      <!-- TAB 1: Profile Details -->
+      <div class="tab-panel active" id="tabProfile">
+        <div class="settings-card">
+          <h3 class="settings-card-title">&#127912; Customize Appearance</h3>
+          <p class="settings-card-desc">Choose a preset avatar or upload your own personal picture.</p>
+
+          <div class="avatar-presets-label">Popular Preset Avatars</div>
+          <div class="avatar-presets-grid" id="presetAvatarsGrid">
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🍿')" title="Popcorn">🍿</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('📺')" title="Television">📺</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🎬')" title="Clapperboard">🎬</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🚀')" title="Sci-Fi">🚀</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🐉')" title="Fantasy">🐉</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🕵️')" title="Mystery">🕵️</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('👑')" title="VIP Crown">👑</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🎮')" title="Gamer">🎮</button>
+            <button type="button" class="preset-avatar-btn" onclick="selectPresetAvatar('🌟')" title="Star">🌟</button>
+            <button type="button" class="preset-avatar-btn" onclick="removeAvatar()" title="Reset to Initial">&#10006;</button>
+          </div>
+
+          <form id="profileForm" onsubmit="handleProfileSave(event)">
+            <div class="form-group">
+              <label class="form-label" for="profileUsername">Display Username</label>
+              <input type="text" class="form-input" id="profileUsername" placeholder="e.g. CinemaLover99" maxlength="30" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="profileEmail">Email Address (Read-only)</label>
+              <input type="email" class="form-input" id="profileEmail" disabled style="opacity: 0.7; cursor: not-allowed;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="profileBio">Bio / Favorite TV Quotes</label>
+              <textarea class="bio-textarea" id="profileBio" maxlength="250" placeholder="Tell other TV Tracker fans what shows you love..." oninput="updateBioCount()"></textarea>
+              <div class="bio-counter" id="bioCounter">0 / 250 characters</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="favoriteGenre">Favorite Genre</label>
+              <select class="form-input" id="favoriteGenre">
+                <option value="All">All Genres</option>
+                <option value="Action">Action &amp; Adventure</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Drama">Drama</option>
+                <option value="Sci-Fi &amp; Fantasy">Sci-Fi &amp; Fantasy</option>
+                <option value="Horror">Horror &amp; Thriller</option>
+                <option value="Mystery">Mystery &amp; Crime</option>
+                <option value="Animation">Animation &amp; Anime</option>
+                <option value="Documentary">Documentary</option>
+              </select>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1.5rem;">
+              <button type="submit" class="form-btn-save" id="profileSaveBtn">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 2: Security & 2FA -->
+      <div class="tab-panel" id="tabSecurity">
+        <!-- 2FA Card -->
+        <div class="settings-card">
+          <h3 class="settings-card-title">&#128737; Two-Factor Authentication (2FA)</h3>
+          <p class="settings-card-desc">Protect your TV Tracker account by requiring an authenticator code when signing in.</p>
+
+          <div class="security-row">
+            <div class="security-info">
+              <h4>Authenticator App (TOTP)</h4>
+              <p>Use Google Authenticator, Authy, Microsoft Authenticator, or 1Password.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="security-badge disabled" id="twoFactorBadge">&#10006; Disabled</span>
+              <button type="button" class="btn-secondary-action" id="twoFactorBtn" onclick="toggleTwoFactorFlow()">Enable 2FA</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="settings-card">
+          <h3 class="settings-card-title">&#128273; Change Password</h3>
+          <p class="settings-card-desc">Update your login password regularly to keep your account safe.</p>
+
+          <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+            <div class="form-group">
+              <label class="form-label" for="newSecPassword">New Password</label>
+              <input type="password" class="form-input" id="newSecPassword" placeholder="Minimum 6 characters" minlength="6" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="confirmSecPassword">Confirm New Password</label>
+              <input type="password" class="form-input" id="confirmSecPassword" placeholder="Confirm new password" minlength="6" required>
+            </div>
+            <div class="auth-error" id="changePasswordError"></div>
+            <div class="auth-success" id="changePasswordSuccess"></div>
+            <button type="submit" class="form-btn-save" id="changePasswordBtn" style="margin-top: 0.5rem;">Update Password</button>
+          </form>
+        </div>
+
+        <!-- Active Sessions Card -->
+        <div class="settings-card">
+          <h3 class="settings-card-title">&#128241; Device &amp; Session Activity</h3>
+          <p class="settings-card-desc">Devices currently logged into your TV Tracker account.</p>
+
+          <div class="security-row">
+            <div class="security-info">
+              <h4>Current Browser Session <span style="color:#22c55e; font-size: 0.75rem; font-weight:700;">&#9679; Active Now</span></h4>
+              <p id="currentDeviceInfo">Web Browser &#8226; Local Device</p>
+            </div>
+            <button type="button" class="btn-secondary-action" onclick="logout()">Log Out</button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-card" style="border-color: rgba(239, 68, 68, 0.3);">
+          <h3 class="settings-card-title" style="color: #f87171;">&#9888;&#65039; Danger Zone</h3>
+          <p class="settings-card-desc">Permanent actions regarding your TV Tracker account and data.</p>
+
+          <div class="security-row">
+            <div class="security-info">
+              <h4>Clear Show Tracker Data</h4>
+              <p>Permanently remove all shows from your personal tracking list.</p>
+            </div>
+            <button type="button" class="btn-danger-action" onclick="confirmClearTrackerData()">Clear Data</button>
+          </div>
+
+          <div class="security-row">
+            <div class="security-info">
+              <h4>Delete Account</h4>
+              <p>Delete your account and all associated profile settings permanently.</p>
+            </div>
+            <button type="button" class="btn-danger-action" onclick="confirmDeleteAccount()">Delete Account</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2FA Setup Modal Dialog -->
+    <div class="modal-overlay" id="mfaModal" style="display:none;">
+      <div class="modal legal-modal" style="max-width: 460px;">
+        <div class="legal-header">
+          <span class="legal-icon">&#128737;</span>
+          <h2 class="legal-title">Setup Two-Factor Auth</h2>
+          <button class="modal-close" onclick="closeTwoFactorModal()">&times;</button>
+        </div>
+        <div class="legal-body">
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            1. Open your authenticator app (Google Authenticator, Authy, etc.).<br>
+            2. Enter the secret key below:
+          </p>
+
+          <div class="mfa-setup-box">
+            <div class="mfa-qr-wrap" id="mfaQrWrap">
+              <div class="mfa-loading" id="mfaQrLoading">Generating QR code...</div>
+              <div id="mfaQr" style="display:none;"></div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Secret Key:</div>
+            <div class="mfa-secret-code" id="mfaSecretDisplay">...</div>
+            <button type="button" class="btn-secondary-action" style="margin-top:8px; font-size:0.75rem;" onclick="copyMfaSecret()">&#128203; Copy Key</button>
+          </div>
+
+          <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 1rem;">
+            3. Enter the 6-digit code generated by your app:
+          </p>
+
+          <form id="mfaVerifyForm" onsubmit="verifyTwoFactorCode(event)">
+            <div class="totp-input-container">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 0)" onkeydown="handleTotpKey(event, 0)">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 1)" onkeydown="handleTotpKey(event, 1)">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 2)" onkeydown="handleTotpKey(event, 2)">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 3)" onkeydown="handleTotpKey(event, 3)">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 4)" onkeydown="handleTotpKey(event, 4)">
+              <input type="text" maxlength="1" class="totp-digit" required oninput="handleTotpInput(this, 5)" onkeydown="handleTotpKey(event, 5)">
+            </div>
+            <div class="auth-error" id="mfaError"></div>
+            <div class="form-actions" style="margin-top: 1.2rem;">
+              <button type="button" class="form-btn-cancel" onclick="closeTwoFactorModal()">Cancel</button>
+              <button type="submit" class="form-btn-save" id="mfaVerifyBtn">Verify &amp; Enable</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="nav-brand-icon">TV</div>
+            <span>TV Tracker</span>
+          </div>
+          <p class="footer-tagline">Your personal TV companion. Track every show, never miss a premiere.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Explore</h4>
+            <a href="tracker.html">Tracker</a>
+            <a href="calendar.html">Calendar</a>
+            <a href="about.html">About Us</a>
+          </div>
+          <div class="footer-col">
+            <h4>Support</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('help')">Feature Request</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('feedback')">Feedback</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="javascript:void(0)" onclick="openLegalModal('terms')">Terms of Service</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('privacy')">Privacy Policy</a>
+            <a href="javascript:void(0)" onclick="openLegalModal('cookies')">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 TV Tracker. Built with passion for TV lovers. Co-founded by <strong>TeamWesternProduction</strong>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js?v=8"></script>
+  <script src="js/auth.js?v=8"></script>
+  <script src="js/legal.js?v=8"></script>
+  <script src="js/totp.js?v=8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <script>
+    let currentAvatarData = '';
+    let currentUser = null;
+    let is2FAActive = false;
+    let pendingMfaSecret = '';
+
+    function switchProfileTab(tabName) {
+      document.getElementById('tabBtnProfile').classList.toggle('active', tabName === 'profile');
+      document.getElementById('tabBtnSecurity').classList.toggle('active', tabName === 'security');
+      document.getElementById('tabProfile').classList.toggle('active', tabName === 'profile');
+      document.getElementById('tabSecurity').classList.toggle('active', tabName === 'security');
+      if (history.replaceState) {
+        history.replaceState(null, '', tabName === 'security' ? '#security' : '#profile');
+      }
+    }
+
+    function updateBioCount() {
+      const val = document.getElementById('profileBio').value;
+      document.getElementById('bioCounter').textContent = `${val.length} / 250 characters`;
+    }
+
+    function renderAvatar(avatarVal, username, email) {
+      currentAvatarData = avatarVal || '';
+      const bannerEl = document.getElementById('bannerAvatar');
+      if (avatarVal) {
+        if (avatarVal.startsWith('data:image') || avatarVal.startsWith('http')) {
+          bannerEl.innerHTML = `<img src="${avatarVal}" alt="Avatar">`;
+        } else {
+          bannerEl.innerHTML = `<span style="font-size:3rem;">${avatarVal}</span>`;
+        }
+      } else {
+        const initial = (username || email || '?')[0].toUpperCase();
+        bannerEl.innerHTML = `<span>${initial}</span>`;
+      }
+      highlightSelectedPreset(avatarVal);
+    }
+
+    function highlightSelectedPreset(val) {
+      document.querySelectorAll('.preset-avatar-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent.trim() === val);
+      });
+    }
+
+    function selectPresetAvatar(emoji) {
+      renderAvatar(emoji, document.getElementById('profileUsername').value, currentUser?.email);
+    }
+
+    function removeAvatar() {
+      renderAvatar('', document.getElementById('profileUsername').value, currentUser?.email);
+    }
+
+    function handleAvatarUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxSize = 200;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+          else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const base64 = canvas.toDataURL('image/jpeg', 0.8);
+          renderAvatar(base64, document.getElementById('profileUsername').value, currentUser?.email);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function initProfilePage() {
+      if (!(await requireAuth())) return;
+      currentUser = await getCurrentUser();
+      if (!currentUser) return;
+
+      document.getElementById('bannerEmail').textContent = currentUser.email;
+      document.getElementById('profileEmail').value = currentUser.email;
+
+      // Detect browser info for session card
+      const ua = navigator.userAgent;
+      let browser = "Web Browser";
+      if (ua.includes("Chrome")) browser = "Google Chrome";
+      else if (ua.includes("Firefox")) browser = "Mozilla Firefox";
+      else if (ua.includes("Safari")) browser = "Apple Safari";
+      else if (ua.includes("Edge")) browser = "Microsoft Edge";
+      document.getElementById('currentDeviceInfo').textContent = `${browser} on Windows/PC \u2022 Current Active Session`;
+
+      // Load Profile
+      const profile = await getUserProfile(true);
+      const username = profile?.username || currentUser.email.split('@')[0];
+      document.getElementById('bannerUsername').textContent = username;
+      document.getElementById('profileUsername').value = username;
+      document.getElementById('profileBio').value = profile?.bio || '';
+      document.getElementById('favoriteGenre').value = profile?.favorite_genre || 'All';
+      updateBioCount();
+
+      renderAvatar(profile?.avatar, username, currentUser.email);
+
+      // 2FA state
+      is2FAActive = !!profile?.two_factor_enabled;
+      update2FAUI(is2FAActive);
+
+      // Tracked shows count
+      try {
+        const shows = JSON.parse(localStorage.getItem('tvTracker_shows') || '[]');
+        document.getElementById('statShowCount').textContent = `${shows.length} shows`;
+      } catch (e) {}
+
+      // Handle direct hash navigation (#security)
+      if (window.location.hash === '#security') {
+        switchProfileTab('security');
+      }
+
+      updateNavbarAuth();
+    }
+
+    function update2FAUI(enabled) {
+      is2FAActive = enabled;
+      const badge = document.getElementById('twoFactorBadge');
+      const btn = document.getElementById('twoFactorBtn');
+      const stat2FA = document.getElementById('stat2FA');
+
+      if (enabled) {
+        badge.className = 'security-badge enabled';
+        badge.innerHTML = '&#10003; Enabled';
+        btn.textContent = 'Disable 2FA';
+        btn.className = 'btn-danger-action';
+        stat2FA.textContent = 'Active \u2713';
+        stat2FA.style.color = '#22c55e';
+      } else {
+        badge.className = 'security-badge disabled';
+        badge.innerHTML = '&#10006; Disabled';
+        btn.textContent = 'Enable 2FA';
+        btn.className = 'btn-secondary-action';
+        stat2FA.textContent = 'Disabled';
+        stat2FA.style.color = '#ef4444';
+      }
+    }
+
+    async function handleProfileSave(e) {
+      e.preventDefault();
+      if (!currentUser) return;
+
+      const btn = document.getElementById('profileSaveBtn');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      const username = document.getElementById('profileUsername').value.trim();
+      const bio = document.getElementById('profileBio').value.trim();
+      const favorite_genre = document.getElementById('favoriteGenre').value;
+
+      await saveUserProfile(currentUser.id, {
+        username,
+        avatar: currentAvatarData,
+        bio,
+        favorite_genre
+      });
+
+      document.getElementById('bannerUsername').textContent = username;
+      updateNavbarAuth();
+
+      btn.textContent = '\u2713 Saved!';
+      btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      setTimeout(() => {
+        btn.textContent = 'Save Changes';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 1800);
+    }
+
+    /* 2FA Modal Handlers */
+    function toggleTwoFactorFlow() {
+      if (is2FAActive) {
+        if (confirm('Are you sure you want to disable Two-Factor Authentication?')) {
+          saveUserProfile(currentUser.id, { two_factor_enabled: false, two_factor_secret: null });
+          update2FAUI(false);
+          alert('Two-Factor Authentication has been disabled.');
+        }
+      } else {
+        openTwoFactorModal();
+      }
+    }
+
+    function openTwoFactorModal() {
+      const modal = document.getElementById('mfaModal');
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => modal.classList.add('active'));
+      document.querySelectorAll('.totp-digit').forEach(inp => inp.value = '');
+      document.getElementById('mfaError').textContent = '';
+
+      // Real TOTP: generate a fresh + shared secret, show a scannable QR code.
+      pendingMfaSecret = generateSecret(20);
+      document.getElementById('mfaSecretDisplay').textContent = pendingMfaSecret;
+
+      const account = currentUser ? (currentUser.email || currentUser.user_metadata?.email || '') : '';
+      const uri = buildOTPAuthURI(pendingMfaSecret, account, 'TV Tracker');
+
+      const qrBox = document.getElementById('mfaQr');
+      const loading = document.getElementById('mfaQrLoading');
+      qrBox.style.display = 'none';
+      loading.style.display = 'block';
+
+      try {
+        if (typeof qrcode !== 'function') throw new Error('QR lib missing');
+        const qr = qrcode(0, 'M');
+        qr.addData(uri);
+        qr.make();
+        qrBox.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2 });
+        qrBox.style.display = 'block';
+        loading.style.display = 'none';
+      } catch (err) {
+        loading.style.display = 'none';
+        qrBox.style.display = 'block';
+        qrBox.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);">Could not render QR in offline mode.</p>';
+      }
+
+      const first = document.querySelector('.totp-digit');
+      if (first) first.focus();
+    }
+
+    function closeTwoFactorModal() {
+      const modal = document.getElementById('mfaModal');
+      modal.classList.remove('active');
+      setTimeout(() => modal.style.display = 'none', 200);
+    }
+
+    function copyMfaSecret() {
+      const text = document.getElementById('mfaSecretDisplay').textContent;
+      navigator.clipboard.writeText(text);
+      alert('Secret key copied to clipboard!');
+    }
+
+    function handleTotpInput(input, index) {
+      if (input.value.length === 1) {
+        const digits = document.querySelectorAll('.totp-digit');
+        if (index < digits.length - 1) {
+          digits[index + 1].focus();
+        }
+      }
+    }
+
+    function handleTotpKey(e, index) {
+      if (e.key === 'Backspace' && !e.target.value) {
+        const digits = document.querySelectorAll('.totp-digit');
+        if (index > 0) {
+          digits[index - 1].focus();
+        }
+      }
+    }
+
+    async function verifyTwoFactorCode(e) {
+      e.preventDefault();
+      const digits = Array.from(document.querySelectorAll('.totp-digit')).map(d => d.value).join('');
+      const errorEl = document.getElementById('mfaError');
+      const btn = document.getElementById('mfaVerifyBtn');
+
+      if (digits.length !== 6) {
+        errorEl.textContent = 'Please enter all 6 digits.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+
+      // Verify the code against the real TOTP secret via Web Crypto (HMAC-SHA1).
+      const ok = await verifyTOTP(pendingMfaSecret, digits);
+      if (!ok) {
+        btn.disabled = false;
+        btn.textContent = 'Verify & Enable';
+        errorEl.textContent = 'Invalid code. Make sure the time on your device is correct and try again.';
+        return;
+      }
+
+      await saveUserProfile(currentUser.id, {
+        two_factor_enabled: true,
+        two_factor_secret: pendingMfaSecret
+      });
+      update2FAUI(true);
+      btn.textContent = '\u2713 2FA Activated!';
+      btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      setTimeout(() => {
+        closeTwoFactorModal();
+        btn.disabled = false;
+        btn.textContent = 'Verify & Enable';
+        btn.style.background = '';
+      }, 1200);
+    }
+
+    /* Change Password Handler */
+    async function handleChangePassword(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('newSecPassword').value;
+      const confirmPwd = document.getElementById('confirmSecPassword').value;
+      const errorEl = document.getElementById('changePasswordError');
+      const successEl = document.getElementById('changePasswordSuccess');
+      const btn = document.getElementById('changePasswordBtn');
+
+      errorEl.textContent = '';
+      successEl.textContent = '';
+
+      if (pwd !== confirmPwd) {
+        errorEl.textContent = 'Passwords do not match.';
+        return;
+      }
+      if (pwd.length < 6) {
+        errorEl.textContent = 'Password must be at least 6 characters.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+
+      try {
+        const { error } = await supabaseClient.auth.updateUser({ password: pwd });
+        btn.disabled = false;
+        btn.textContent = 'Update Password';
+
+        if (error) {
+          errorEl.textContent = error.message;
+          return;
+        }
+
+        successEl.textContent = '\u2713 Password changed successfully!';
+        document.getElementById('newSecPassword').value = '';
+        document.getElementById('confirmSecPassword').value = '';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Update Password';
+        errorEl.textContent = 'Error updating password. Please try again.';
+      }
+    }
+
+    function confirmClearTrackerData() {
+      if (confirm('Are you sure you want to clear your show tracking library? This cannot be undone.')) {
+        localStorage.removeItem('tvTracker_shows');
+        alert('Your show tracking data has been cleared.');
+        document.getElementById('statShowCount').textContent = '0 shows';
+      }
+    }
+
+    function confirmDeleteAccount() {
+      if (confirm('WARNING: Are you sure you want to delete your account? All data will be permanently wiped.')) {
+        logout();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initProfilePage);
+  </script>
+</body>
+</html>

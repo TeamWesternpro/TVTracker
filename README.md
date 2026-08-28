@@ -24,6 +24,7 @@ Your personal TV companion. Track every show, never miss a premiere.
 | **Calendar** | Monthly calendar with release dates. Add upcoming shows, export to personal calendars |
 | **About Us** | What We Do, feature highlights, FAQ accordion, team info |
 | **Auth** | Login, signup, forgot password (Supabase auth) |
+| **Reset Password** | Standalone secure password reset page with live validation |
 | **Profile** | Upload avatar, change username |
 
 ### Tracker
@@ -53,7 +54,7 @@ Your personal TV companion. Track every show, never miss a premiere.
 
 - Brand section, link columns (Explore, Support, Legal), copyright
 - Modal-based pages: Terms of Service, Privacy Policy, Cookie Policy
-- Feature Request and Feedback forms with Discord webhook integration
+- Feature Request and Feedback forms
 
 ## Project Structure
 
@@ -63,6 +64,7 @@ Your personal TV companion. Track every show, never miss a premiere.
 ├── calendar.html           # Release calendar
 ├── about.html              # About Us
 ├── auth.html               # Login / Signup / Forgot Password
+├── reset-password.html     # Standalone Password Reset Page
 ├── profile.html            # User profile
 ├── vercel.json             # Vercel config (no-cache headers)
 ├── css/
@@ -72,7 +74,7 @@ Your personal TV companion. Track every show, never miss a premiere.
 │   ├── auth.js             # Auth state, session check, navbar
 │   ├── data.js             # Data layer (Supabase + localStorage fallback)
 │   ├── calendar-utils.js   # Calendar utilities (ICS, export URLs, duplicate check)
-│   └── legal.js            # Legal modals + Discord webhooks
+│   └── legal.js            # Legal modals & feedback forms
 ├── image/
 │   └── favicon.png         # Site favicon
 └── README.md
