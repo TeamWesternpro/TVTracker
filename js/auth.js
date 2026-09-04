@@ -2,11 +2,18 @@
 // TV Tracker - Auth State & Profile Management
 // ============================================
 
+let cachedSessionUser = null;
+let sessionCacheTime = 0;
+const SESSION_CACHE_MS = 3000;
+
 async function getCurrentUser() {
   if (typeof supabaseClient === 'undefined') return null;
+  if (cachedSessionUser && Date.now() - sessionCacheTime < SESSION_CACHE_MS) return cachedSessionUser;
   try {
     const { data } = await supabaseClient.auth.getSession();
-    return data.session?.user || null;
+    cachedSessionUser = data.session?.user || null;
+    sessionCacheTime = Date.now();
+    return cachedSessionUser;
   } catch (e) {
     return null;
   }
@@ -23,6 +30,8 @@ async function logout() {
       await supabaseClient.auth.signOut();
     } catch (e) {}
   }
+  cachedSessionUser = null;
+  sessionCacheTime = 0;
   localStorage.removeItem('tvTracker_profile');
   localStorage.removeItem('tvTracker_2fa');
   localStorage.removeItem('tvTracker_2fa_secret');
@@ -32,12 +41,56 @@ async function logout() {
 async function getUserProfile(forceRefresh = false) {
   const user = await getCurrentUser();
   if (!user) return null;
-  
-  if (!forceRefresh) {
-    const cached = localStorage.getItem('tvTracker_profile');
-    if (cached) {
-      try { return JSON.parse(cached); } catch (e) {}
-    }
+
+  let cached = null;
+  const cachedStr = localStorage.getItem('tvTracker_profile');
+  if (cachedStr) {
+    try { cached = JSON.parse(cachedStr); } catch (e) {}
+  }
+
+  if (!forceRefresh && cached) {
+    return cached;
+  }
+
+  if (typeof supabaseClient !== 'undefined') {
+    try {
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      if (data && !error) {
+        const defaults = {
+          username: user.email.split('@')[0],
+          avatar: '',
+          bio: '',
+          favorite_genre: 'All',
+          two_factor_enabled: localStorage.getItem('tvTracker_2fa') === 'true',
+          two_factor_secret: localStorage.getItem('tvTracker_2fa_secret') || ''
+        };
+
+        // Only take non-empty values from Supabase so we never wipe out
+        // a previously saved username/avatar with a null/empty row.
+        const cleanData = {};
+        for (const key of Object.keys(data)) {
+          const val = data[key];
+          if (val !== null && val !== undefined && val !== '') {
+            cleanData[key] = val;
+          }
+        }
+
+        // Precedence: cached (user's saved values) wins, then real non-empty
+        // Supabase data, then defaults as a last-resort fallback. This keeps
+        // the username the user saved even if the DB row is null/empty.
+        const merged = { ...defaults, ...cleanData, ...cached };
+        localStorage.setItem('tvTracker_profile', JSON.stringify(merged));
+        return merged;
+      }
+    } catch (e) {}
+  }
+
+  if (cached) {
+    return cached;
   }
 
   const defaultProfile = {
@@ -48,22 +101,6 @@ async function getUserProfile(forceRefresh = false) {
     two_factor_enabled: localStorage.getItem('tvTracker_2fa') === 'true',
     two_factor_secret: localStorage.getItem('tvTracker_2fa_secret') || ''
   };
-
-  if (typeof supabaseClient !== 'undefined') {
-    try {
-      const { data, error } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      if (data && !error) {
-        const merged = { ...defaultProfile, ...data };
-        localStorage.setItem('tvTracker_profile', JSON.stringify(merged));
-        return merged;
-      }
-    } catch (e) {}
-  }
-  
   localStorage.setItem('tvTracker_profile', JSON.stringify(defaultProfile));
   return defaultProfile;
 }
