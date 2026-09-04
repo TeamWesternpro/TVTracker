@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TV Tracker - Calendar</title>
   <link rel="icon" type="image/png" href="image/favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=7">
+  <link rel="stylesheet" href="css/styles.css?v=8">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -80,34 +80,36 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="js/config.js?v=5"></script>
-  <script src="js/auth.js?v=5"></script>
-  <script src="js/data.js?v=5"></script>
-  <script src="js/calendar-utils.js?v=1"></script>
-  <script src="js/legal.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/auth.js?v=11"></script>
+  <script src="js/data.js?v=6"></script>
+  <script src="js/calendar-utils.js?v=2"></script>
+  <script src="js/legal.js?v=6"></script>
   <script>
     let calYear, calMonth;
+    let cachedShows = null;
 
     async function initCalendar() {
-      if (!(await requireAuth())) return;
-      updateNavbarAuth();
       const user = await getCurrentUser();
+      if (!user) { window.location.href = 'auth.html'; return; }
+      updateNavbarAuth();
       const addBtn = document.querySelector('.add-btn');
-      if (addBtn) addBtn.style.display = user ? '' : 'none';
+      if (addBtn) addBtn.style.display = '';
       const now = new Date();
       calYear = now.getFullYear();
       calMonth = now.getMonth();
-      await renderCalendar();
+      renderCalendar();
+      getShows().then(shows => { cachedShows = shows; renderCalendar(); });
     }
 
-    async function changeMonth(dir) {
+    function changeMonth(dir) {
       calMonth += dir;
       if (calMonth > 11) { calMonth = 0; calYear++; }
       if (calMonth < 0) { calMonth = 11; calYear--; }
-      await renderCalendar();
+      renderCalendar();
     }
 
-    async function renderCalendar() {
+    function renderCalendar() {
       const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       document.getElementById('monthLabel').textContent = `${months[calMonth]} ${calYear}`;
       const grid = document.getElementById('calendarGrid');
@@ -116,8 +118,9 @@
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
       const today = new Date();
-      const shows = await getShows();
+      const shows = cachedShows || [];
       const calEvents = getCalEvents();
+      const holidayMap = buildHolidayMap(calYear);
       let html = dayNames.map(d => `<div class="calendar-day-header">${d}</div>`).join('');
       for (let i = firstDay - 1; i >= 0; i--) {
         html += `<div class="calendar-day other-month"><div class="calendar-day-number">${daysInPrevMonth - i}</div></div>`;
@@ -125,8 +128,13 @@
       for (let day = 1; day <= daysInMonth; day++) {
         const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day;
         const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const holiday = getHolidayForDate(dateStr, holidayMap);
         const dayShows = shows.filter(s => s.releaseDate === dateStr);
         const dayCalEvents = calEvents.filter(e => e.releaseDate === dateStr);
+        let holidayHTML = '';
+        if (holiday) {
+          holidayHTML = `<div class="calendar-holiday" title="${holiday.name}"><span class="holiday-emoji">${holiday.emoji}</span> <span class="holiday-name">${holiday.name}</span></div>`;
+        }
         let eventsHTML = dayShows.map(s => {
           let cls = 'upcoming';
           if (s.status === 'Watched') cls = 'watched';
@@ -158,8 +166,10 @@
             </div>
           </div>`
         ).join('');
-        html += `<div class="calendar-day ${isToday ? 'today' : ''}">
+        html += `<div class="calendar-day ${isToday ? 'today' : ''} ${holiday ? 'has-holiday' : ''}">
+          ${isToday ? '<div class="today-badge">Today</div>' : ''}
           <div class="calendar-day-number">${day}</div>
+          ${holidayHTML}
           ${eventsHTML}
         </div>`;
       }
@@ -346,7 +356,7 @@
 
       addCalEvent({ title, releaseDate: date, status: 'Upcoming' });
       closeModal('upcomingModal');
-      await renderCalendar();
+      renderCalendar();
       showToast(`"${title}" added to calendar!`, 'success');
     }
 
@@ -359,9 +369,9 @@
       }
     }
 
-    async function deleteCalEvent(id) {
+    function deleteCalEvent(id) {
       removeCalEvent(id);
-      await renderCalendar();
+      renderCalendar();
       showToast('Calendar event deleted', 'success');
     }
 
