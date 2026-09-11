@@ -42,6 +42,8 @@ async function getUserProfile(forceRefresh = false) {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const emailFallback = user.email ? user.email.split('@')[0] : '';
+
   let cached = null;
   const cachedStr = localStorage.getItem('tvTracker_profile');
   if (cachedStr) {
@@ -52,57 +54,53 @@ async function getUserProfile(forceRefresh = false) {
     return cached;
   }
 
+  let dbProfile = null;
   if (typeof supabaseClient !== 'undefined') {
     try {
       const { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       if (data && !error) {
-        const defaults = {
-          username: user.email.split('@')[0],
-          avatar: '',
-          bio: '',
-          favorite_genre: 'All',
-          two_factor_enabled: localStorage.getItem('tvTracker_2fa') === 'true',
-          two_factor_secret: localStorage.getItem('tvTracker_2fa_secret') || ''
-        };
-
+        dbProfile = {};
         // Only take non-empty values from Supabase so we never wipe out
         // a previously saved username/avatar with a null/empty row.
-        const cleanData = {};
         for (const key of Object.keys(data)) {
           const val = data[key];
           if (val !== null && val !== undefined && val !== '') {
-            cleanData[key] = val;
+            dbProfile[key] = val;
           }
         }
-
-        // Precedence: cached (user's saved values) wins, then real non-empty
-        // Supabase data, then defaults as a last-resort fallback. This keeps
-        // the username the user saved even if the DB row is null/empty.
-        const merged = { ...defaults, ...cleanData, ...cached };
-        localStorage.setItem('tvTracker_profile', JSON.stringify(merged));
-        return merged;
       }
     } catch (e) {}
   }
 
-  if (cached) {
-    return cached;
-  }
+  // The email prefix is ONLY a last-resort fallback for first-time users.
+  // It can NEVER override a username the user has already chosen, whether
+  // stored locally, in the dashboard profiles table, or in the auth
+  // user's own metadata.
+  const metadataUsername = user.user_metadata && user.user_metadata.username;
 
-  const defaultProfile = {
-    username: user.email.split('@')[0],
+  const merged = {
+    username: emailFallback,
     avatar: '',
     bio: '',
     favorite_genre: 'All',
     two_factor_enabled: localStorage.getItem('tvTracker_2fa') === 'true',
-    two_factor_secret: localStorage.getItem('tvTracker_2fa_secret') || ''
+    two_factor_secret: localStorage.getItem('tvTracker_2fa_secret') || '',
+    ...(dbProfile || {}),
+    ...(metadataUsername ? { username: metadataUsername } : {}),
+    ...(cached || {})
   };
-  localStorage.setItem('tvTracker_profile', JSON.stringify(defaultProfile));
-  return defaultProfile;
+
+  // Never regress to the email fallback when a real username exists.
+  if (!merged.username) {
+    merged.username = metadataUsername || emailFallback;
+  }
+
+  localStorage.setItem('tvTracker_profile', JSON.stringify(merged));
+  return merged;
 }
 
 async function saveUserProfile(userId, profileData) {
@@ -123,24 +121,24 @@ async function saveUserProfile(userId, profileData) {
 
   if (typeof supabaseClient !== 'undefined') {
     try {
-      const { data: existing } = await supabaseClient
+      // Upsert avoids the select-then-insert race and works whether the row
+      // already exists (update) or not (insert).
+      const { error: dbError } = await supabaseClient
         .from('profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
-
-      if (existing) {
-        await supabaseClient
-          .from('profiles')
-          .update(profileData)
-          .eq('user_id', userId);
-      } else {
-        await supabaseClient
-          .from('profiles')
-          .insert([{ user_id: userId, ...profileData }]);
+        .upsert({ user_id: userId, ...profileData }, { onConflict: 'user_id' });
+      if (dbError) {
+        console.warn('Could not sync profile to Supabase (using local storage):', dbError.message);
       }
     } catch (e) {
-      console.warn('Could not sync profile to Supabase table (using local storage):', e.message);
+      console.warn('Could not sync profile to Supabase (using local storage):', e.message);
+    }
+
+    // Persist the username on the auth user itself as a second, always-
+    // available copy so it never falls back to the email prefix.
+    if (typeof profileData.username === 'string' && profileData.username.trim()) {
+      try {
+        await supabaseClient.auth.updateUser({ data: { username: profileData.username.trim() } });
+      } catch (e) {}
     }
   }
   return updated;
